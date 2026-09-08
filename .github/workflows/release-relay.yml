@@ -1,0 +1,45 @@
+name: Release relay
+
+# Build services/relay and publish function.zip as a GitHub Release
+# (tag relay-v0.<run>). Deploy runs from operations:
+# `scripts/deploy ws gin-rummy <env> relay-v0.<run>`.
+
+on:
+  push:
+    branches: [main]
+    paths: ["services/relay/**", ".github/workflows/release-relay.yml"]
+
+permissions:
+  contents: write
+
+concurrency: release-relay-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test --workspace=relay
+      - run: npm run build --workspace=relay
+
+      - name: Package
+        run: |
+          (cd services/relay/dist && zip -qr ../../../function.zip .)
+          jq -n --arg sha "$GITHUB_SHA" \
+            '{type:"lambda", runtime:"nodejs22.x", handler:"index.handler", commit:$sha}' > manifest.json
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="relay-v0.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" function.zip manifest.json \
+            --title "$TAG" \
+            --notes "relay build of ${GITHUB_SHA:0:7} for wss://ws.peteshepley.com/gin-rummy"
