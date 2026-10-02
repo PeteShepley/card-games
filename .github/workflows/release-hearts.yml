@@ -1,0 +1,66 @@
+name: Release hearts
+
+# Build games/hearts once per environment and publish as a GitHub Release
+# (tag hearts-v0.<run>). Deploy runs from operations:
+# `scripts/deploy game hearts <env> hearts-v0.<run>`.
+#
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "games/hearts/**"
+      - "packages/**"
+      - "package-lock.json"
+      - ".github/workflows/release-hearts.yml"
+
+permissions:
+  contents: write
+
+concurrency: release-hearts-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test --workspace=@card-games/card-kit --workspace=hearts
+
+      - name: Build (prod)
+        run: |
+          npm run build --workspace=hearts
+          tar -czf dist-prod.tgz -C games/hearts/dist .
+          rm -rf games/hearts/dist
+        env:
+          VITE_BASE_PATH: /hearts/
+          VITE_WS_URL: wss://ws.peteshepley.com/relay
+
+      - name: Build (stage)
+        run: |
+          npm run build --workspace=hearts
+          tar -czf dist-stage.tgz -C games/hearts/dist .
+          rm -rf games/hearts/dist
+        env:
+          VITE_BASE_PATH: /hearts/
+          VITE_WS_URL: wss://ws.stage.peteshepley.com/relay
+
+      - name: Manifest
+        run: |
+          jq -n --arg sha "$GITHUB_SHA" \
+            '{type:"static", mode:"spa", base_path:"/hearts/", commit:$sha}' > manifest.json
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="hearts-v0.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" dist-prod.tgz dist-stage.tgz manifest.json \
+            --title "$TAG" \
+            --notes "Build of ${GITHUB_SHA:0:7} for game.peteshepley.com/hearts"

@@ -1,0 +1,296 @@
+/* Shared table look for the DOM-rendered games: the felt, card faces and
+   backs, nameplates, the HUD strip, the hand row and overlays. Each game
+   imports this once and adds its own layout on top. */
+
+:root {
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  color-scheme: light dark;
+  --felt: #2f5d34;
+  --felt-dark: #244a29;
+  --card-w: clamp(52px, 9vw, 92px);
+  --card-h: calc(var(--card-w) * 1.4);
+  --mini-w: clamp(18px, 3vw, 28px);
+  --accent: #7fd1ff;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+.table {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 420px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 1rem;
+  background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
+  color: #fff;
+  overflow: hidden;
+}
+
+/* Before the first deal there is nothing on the felt but the HUD. */
+.table--idle {
+  grid-template-rows: 1fr;
+  place-items: center;
+}
+
+/* --- cards --- */
+
+.card {
+  display: block;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: calc(var(--card-w) * 0.07);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  background: #fff;
+  user-select: none;
+}
+
+.card--back {
+  box-sizing: border-box;
+  border: 3px solid #f4f4f4;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0 6px, transparent 6px 12px),
+    #3a5aa0;
+}
+
+.card--empty {
+  box-sizing: border-box;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  background: transparent;
+  box-shadow: none;
+}
+
+.card--mini {
+  width: var(--mini-w);
+  height: calc(var(--mini-w) * 1.4);
+  border-width: 2px;
+  border-radius: 3px;
+}
+
+.hud {
+  justify-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.45rem 0.8rem;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+/* The gin nameplate look, inline. */
+.nameplate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.1rem 0.55rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.nameplate__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.nameplate--active {
+  border-color: var(--accent);
+}
+
+.nameplate--active .nameplate__dot {
+  background: var(--accent);
+  animation: nameplate-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes nameplate-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(127, 209, 255, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 0.35rem rgba(127, 209, 255, 0);
+  }
+}
+
+/* --- opponents --- */
+
+.opponents {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1.5rem;
+}
+
+.opponent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.opponent__fan {
+  display: flex;
+  min-height: calc(var(--mini-w) * 1.4);
+}
+
+.opponent__fan .card + .card {
+  margin-left: calc(var(--mini-w) * -0.55);
+}
+
+.opponent__count {
+  opacity: 0.7;
+  font-size: 0.75em;
+}
+
+.opponent__dealer {
+  font-size: 0.7em;
+  font-weight: 700;
+  padding: 0 0.3rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.opponent__score {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+/* --- feed --- */
+
+.feed {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 14rem;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.feed li:last-child {
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .feed {
+    display: none;
+  }
+}
+
+/* --- your hand --- */
+
+.hand {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+  min-height: calc(var(--card-h) + 1rem);
+}
+
+.hand__card {
+  padding: 0;
+  border: 0;
+  background: none;
+  transition: transform 120ms ease;
+}
+
+.hand__card + .hand__card {
+  margin-left: calc(var(--card-w) * var(--squeeze) * -1);
+}
+
+.hand__card--live {
+  cursor: pointer;
+  transform: translateY(-0.6rem);
+}
+
+.hand__card--live:hover,
+.hand__card--live:focus-visible {
+  transform: translateY(-1.1rem);
+  outline: none;
+}
+
+.hand__card--live .card {
+  box-shadow: 0 0 0 3px var(--accent), 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.hand__card--dim .card {
+  filter: brightness(0.65);
+}
+
+/* --- overlays --- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.overlay--soft {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 260px;
+  max-width: 90vw;
+  padding: 1.25rem 1.5rem;
+  background: rgba(20, 20, 20, 0.94);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.scores {
+  border-collapse: collapse;
+  min-width: 12rem;
+}
+
+.scores td {
+  padding: 0.15rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.scores td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hand__card {
+    transition: none;
+  }
+  .nameplate--active .nameplate__dot {
+    animation: none;
+  }
+}
