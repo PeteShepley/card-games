@@ -1,104 +1,5 @@
-/* Hearts layout on top of the kit's table.css: four seats around a trick
-   laid out as a cross. */
-
-.hearts {
-  grid-template-columns: 1fr auto 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    ". top ."
-    "left trick right"
-    "bottom bottom bottom";
-}
-
-.seat--top {
-  grid-area: top;
-}
-
-.seat--left {
-  grid-area: left;
-  justify-self: start;
-  align-self: center;
-}
-
-.seat--right {
-  grid-area: right;
-  justify-self: end;
-  align-self: center;
-}
-
-.seat--bottom {
-  grid-area: bottom;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.hud__score {
-  opacity: 0.75;
-  font-size: 0.8rem;
-}
-
-.hud button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* --- the trick --- */
-
-.trick {
-  grid-area: trick;
-  position: relative;
-  align-self: center;
-  display: grid;
-  grid-template-columns: repeat(3, var(--card-w));
-  grid-template-rows: repeat(3, calc(var(--card-h) * 0.62));
-  grid-template-areas:
-    ". top ."
-    "left . right"
-    ". bottom .";
-  gap: 0.25rem;
-  justify-items: center;
-  align-items: center;
-}
-
-.trick__slot--top {
-  grid-area: top;
-}
-.trick__slot--left {
-  grid-area: left;
-}
-.trick__slot--right {
-  grid-area: right;
-}
-.trick__slot--bottom {
-  grid-area: bottom;
-}
-
-.trick--last .card {
-  filter: brightness(0.7);
-}
-
-.trick__caption,
-.trick__broken {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 0.8rem;
-}
-
-.trick__caption {
-  top: 50%;
-  margin-top: -0.6rem;
-  font-weight: 600;
-}
-
-.trick__broken {
-  bottom: -1.6rem;
-  color: #ffb3b3;
-  opacity: 0.85;
-}
+/* Hearts additions on top of the kit's table.css (which provides the
+   four-seat layout and the trick cross): the pass picker. */
 
 /* A card chosen to pass rides higher than a merely playable one. */
 .hand__card--picked {
@@ -109,41 +10,12 @@
   box-shadow: 0 0 0 3px #ffd54f, 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
-.scores th {
-  font-weight: 500;
-  font-size: 0.8rem;
-  opacity: 0.7;
-  text-align: right;
-  padding: 0 0.5rem;
-}
-
-@media (max-width: 640px) {
-  .hearts {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-areas:
-      "left top right"
-      "trick trick trick"
-      "bottom bottom bottom";
-  }
-  .seat--left,
-  .seat--right {
-    justify-self: center;
-    align-self: start;
-  }
-  .trick {
-    justify-self: center;
-  }
-}
-
 .hand__card--picked:hover,
 .hand__card--picked:focus-visible {
   transform: translateY(-1.6rem);
 }
 
-/* The left seat owns the left edge here, so the feed sits low on the
-   left, above the hand. */
-.hearts .feed {
-  top: auto;
-  bottom: calc(var(--card-h) + 4.5rem);
-  transform: none;
+/* Hearts broken is the one note under the trick. */
+.trick__note {
+  color: #ffb3b3;
 }

@@ -1,8 +1,8 @@
-import type { Card, Rank, Suit } from "@card-games/card-kit/cards.ts";
+import type { Card, Rank, Suit } from "./cards.ts";
 
 // Trick-taking primitives, game-agnostic: follow suit, and the highest card
 // of the suit led (or of trump, when a game has one) takes the trick.
-// Hearts has no trump; Spades will pass "spades".
+// Hearts plays without trump; Spades passes "spades".
 
 export type Seat = string;
 

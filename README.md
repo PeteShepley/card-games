@@ -11,10 +11,13 @@ packages/card-kit/   shared by every game
   handOrder, fireworks, hudStyles
   net/                   relay + loopback transports, GameInfo / ContractTarget
   Lobby, RelayApp        create / join / wait / reconnect UI over the relay
-  table/                 DOM table pieces: table.css, CardFace, OpponentSeat, labels
+  tricks                 follow suit, trick winner (optional trump), hand sorting
+  table/                 DOM table pieces: table.css, CardFace, OpponentSeat, labels,
+                         four-seat positions and the TrickArea cross
 games/gin-rummy/     2 players: engine, Pixi table, HUD (see its DESIGN.md)
 games/crazy-eights/  2-6 players: engine, DOM table
-games/hearts/        4 players: engine, trick primitives, DOM table
+games/hearts/        4 players: passing, no trump, game to 100
+games/spades/        4 players in partnerships: bidding, spades trump, game to 500
 ```
 
 Every game keeps the same invariant: **state is a pure function of

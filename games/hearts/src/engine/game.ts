@@ -1,8 +1,8 @@
 import { newDeck, shuffle } from "@card-games/card-kit/deck.ts";
 import { sameCard } from "@card-games/card-kit/cards.ts";
 import type { Card } from "@card-games/card-kit/cards.ts";
-import { followable, trickWinner } from "./tricks.ts";
-import type { Played, Seat } from "./tricks.ts";
+import { followable, trickWinner } from "@card-games/card-kit/tricks.ts";
+import type { Played, Seat } from "@card-games/card-kit/tricks.ts";
 
 export type { Played, Seat };
 
