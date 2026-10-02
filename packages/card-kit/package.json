@@ -1,0 +1,34 @@
+{
+  "name": "@card-games/card-kit",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "What every card game here shares: cards, deck, PRNG, card faces, hand ordering, the relay/loopback transports, and the lobby.",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "lint": "oxlint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@peteshepley/game-relay": "github:PeteShepley/game-relay#v0.1"
+  },
+  "peerDependencies": {
+    "pixi.js": "^8.19.0",
+    "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "oxlint": "^1.75.0",
+    "pixi.js": "^8.19.0",
+    "react": "^19.2.8",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
+  },
+  "prettier": {
+    "trailingComma": "none"
+  }
+}
