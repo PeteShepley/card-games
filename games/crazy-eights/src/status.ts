@@ -1,18 +1,9 @@
-import type { Card, Suit } from "@card-games/card-kit/cards.ts";
+import { SUIT_SYMBOL, cardLabel } from "@card-games/card-kit/table/labels.ts";
 import type { Action, EngineState, Seat } from "./engine/game.ts";
 
 // Every sentence the table shows. Pure, so it is tested without React.
 
-export const SUIT_SYMBOL: Record<Suit, string> = {
-  clubs: "♣",
-  diamonds: "♦",
-  hearts: "♥",
-  spades: "♠"
-};
-
-export function cardLabel(card: Card): string {
-  return `${card.rank}${SUIT_SYMBOL[card.suit]}`;
-}
+export { SUIT_SYMBOL, cardLabel };
 
 const nameOf = (names: Readonly<Record<Seat, string>>, seat: Seat) =>
   names[seat] ?? `Seat ${seat.toUpperCase()}`;

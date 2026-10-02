@@ -1,9 +1,10 @@
 import { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { cardAssetUrl } from "@card-games/card-kit/cardAssets.ts";
 import { cardKey, sameCard, SUITS } from "@card-games/card-kit/cards.ts";
 import type { Card, Suit } from "@card-games/card-kit/cards.ts";
 import { hudButton, hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
+import { CardFace, Nameplate, OpponentSeat } from "@card-games/card-kit/table/Cards.tsx";
+import { squeeze } from "@card-games/card-kit/table/labels.ts";
 import { canDraw, legalActions, nextSeat, playableCards, topCard } from "./engine/game.ts";
 import type { Action, EngineState, Seat } from "./engine/game.ts";
 import { SUIT_SYMBOL, cardLabel, resultLine, statusLine } from "./status.ts";
@@ -88,10 +89,7 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
       </ol>
 
       <div className="hud">
-        <span className={`nameplate nameplate--inline${myTurn ? " nameplate--active" : ""}`}>
-          <span className="nameplate__dot" />
-          {names[perspective] ?? "You"}
-        </span>
+        <Nameplate active={myTurn}>{names[perspective] ?? "You"}</Nameplate>
         <span>{statusLine(game, perspective, names)}</span>
         {legal.includes("startHand") && (
           <button type="button" style={hudPrimaryButton} onClick={() => submit({ type: "startHand" })}>
@@ -178,26 +176,16 @@ function Opponents({
   }
   return (
     <div className="opponents">
-      {order.map((seat) => {
-        const count = game.hands[seat]?.length ?? 0;
-        const active = game.phase === "play" && game.toAct === seat;
-        return (
-          <div className="opponent" key={seat}>
-            <div className="opponent__fan" aria-hidden="true">
-              {Array.from({ length: Math.min(count, 8) }, (_, index) => (
-                <div className="card card--back card--mini" key={index} />
-              ))}
-            </div>
-            <span className={`nameplate nameplate--inline${active ? " nameplate--active" : ""}`}>
-              <span className="nameplate__dot" />
-              {names[seat] ?? seat}
-              <span className="opponent__count">{count} cards</span>
-              {seat === game.dealer && <span className="opponent__dealer" title="dealer">D</span>}
-            </span>
-            <span className="opponent__score">{game.scores[seat]} pts</span>
-          </div>
-        );
-      })}
+      {order.map((seat) => (
+        <OpponentSeat
+          key={seat}
+          name={names[seat] ?? seat}
+          count={game.hands[seat]?.length ?? 0}
+          active={game.phase === "play" && game.toAct === seat}
+          badge={seat === game.dealer && <span className="opponent__dealer" title="dealer">D</span>}
+          detail={`${game.scores[seat]} pts`}
+        />
+      ))}
     </div>
   );
 }
@@ -216,14 +204,4 @@ function Scores({ game, names }: { game: EngineState; names: Readonly<Record<Sea
       </tbody>
     </table>
   );
-}
-
-function CardFace({ card }: { card: Card }) {
-  return <img className="card" src={cardAssetUrl(card)} alt={cardLabel(card)} draggable={false} />;
-}
-
-// How much neighbouring cards overlap: none for a normal hand, then more
-// as draws pile up, so a long hand still fits one row.
-function squeeze(count: number): number {
-  return count <= 7 ? 0.05 : Math.min(0.72, 1 - 7 / count);
 }
