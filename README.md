@@ -12,6 +12,7 @@ packages/card-kit/   shared by every game
   net/                   relay + loopback transports, GameInfo / ContractTarget
   Lobby, RelayApp        create / join / wait / reconnect UI over the relay
 games/gin-rummy/     2 players: engine, Pixi table, HUD (see its DESIGN.md)
+games/crazy-eights/  2-6 players: engine, DOM table
 ```
 
 Every game keeps the same invariant: **state is a pure function of
