@@ -23,13 +23,12 @@ as the fourth player joins.
   - `game.ts`: the pure reducer. Property tests play whole random legal
     games to 100, checking the deck is conserved, every hand totals 26, and
     replay is deterministic.
-  - `tricks.ts`: game-agnostic trick-taking (follow suit, trick winner with
-    optional trump). It moves to the kit when Spades needs it.
+  - Trick-taking primitives (follow suit, trick winner) come from the kit's
+    `tricks.ts`, which Spades shares.
 - `src/store.ts`, `src/status.ts`: the snapshot store and the table's
   wording. A pass is announced, never shown.
-- `src/Table.tsx`, `src/index.css`: four seats around the trick, laid out as
-  a cross. The next player sits on your left. Built on the kit's DOM table
-  pieces.
+- `src/Table.tsx`, `src/index.css`: the kit's four-seat layout and trick
+  cross (the next player sits on your left), plus the three-card pass picker.
 - `src/App.tsx`: networked play by default; `?solo` is a four-seat hot seat.
 
 Every client holds the full deal (that's what lets state replay from the

@@ -5,9 +5,11 @@ import type { Card } from "@card-games/card-kit/cards.ts";
 import { hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
 import { CardFace, Nameplate, OpponentSeat } from "@card-games/card-kit/table/Cards.tsx";
 import { cardLabel, squeeze } from "@card-games/card-kit/table/labels.ts";
-import { cardPoints, legalPlays, nextSeat, passTarget } from "./engine/game.ts";
-import type { Action, EngineState, Played, Seat } from "./engine/game.ts";
-import { sortHand } from "./engine/tricks.ts";
+import { seatPositions } from "@card-games/card-kit/table/seats.ts";
+import { TrickArea } from "@card-games/card-kit/table/Trick.tsx";
+import { cardPoints, legalPlays, passTarget } from "./engine/game.ts";
+import type { Action, EngineState, Seat } from "./engine/game.ts";
+import { sortHand } from "@card-games/card-kit/tricks.ts";
 import { gameLine, handLine, nameOf, statusLine } from "./status.ts";
 import type { GameSnapshot } from "./store.ts";
 
@@ -18,19 +20,6 @@ interface TableProps {
   perspective: Seat;
   submit: (action: Action) => void;
   banner?: ReactNode;
-}
-
-type Position = "left" | "top" | "right" | "bottom";
-
-// Play passes to the left, so the next seat sits on your left, the one
-// after across, and the last on your right.
-function positions(game: EngineState, perspective: Seat): Record<Position, Seat> {
-  return {
-    bottom: perspective,
-    left: nextSeat(game, perspective, 1),
-    top: nextSeat(game, perspective, 2),
-    right: nextSeat(game, perspective, 3)
-  };
 }
 
 export function Table({ snapshot, perspective, submit, banner }: TableProps) {
@@ -55,7 +44,7 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
     );
   }
 
-  const seatAt = positions(game, perspective);
+  const seatAt = seatPositions(game.seats, perspective);
   const hand = sortHand(game.hands[perspective] ?? []);
   const pickKey = `${game.handNumber}:${perspective}`;
   const chosen = picked.key === pickKey ? picked.cards : [];
@@ -82,7 +71,7 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
     `${cardPoints(game.taken[seat])} this hand · ${game.scores[seat]} total`;
 
   return (
-    <div className="table hearts">
+    <div className="table table--four">
       {banner}
       {(["left", "top", "right"] as const).map((position) => {
         const seat = seatAt[position];
@@ -99,7 +88,13 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
         );
       })}
 
-      <TrickArea game={game} seatAt={seatAt} names={names} />
+      <TrickArea
+        trick={game.trick}
+        last={game.phase === "playing" ? game.lastTrick?.cards : null}
+        seatAt={seatAt}
+        caption={game.lastTrick && `${nameOf(names, game.lastTrick.winner)} took it`}
+        note={game.heartsBroken && game.phase === "playing" && "♥ broken"}
+      />
 
       <ol className="feed">
         {snapshot.feed.map((entry) => (
@@ -161,38 +156,6 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// The trick in a cross, each card in front of whoever played it. Between
-// tricks the last one stays on the felt (dimmed) so the fourth card is seen.
-function TrickArea({
-  game,
-  seatAt,
-  names
-}: {
-  game: EngineState;
-  seatAt: Record<Position, Seat>;
-  names: Readonly<Record<Seat, string>>;
-}) {
-  const showingLast = game.trick.length === 0 && game.lastTrick !== null && game.phase === "playing";
-  const cards: readonly Played[] = showingLast ? game.lastTrick!.cards : game.trick;
-  const at = (position: Position) => cards.find((played) => played.seat === seatAt[position]);
-  return (
-    <div className={`trick${showingLast ? " trick--last" : ""}`}>
-      {(["top", "left", "right", "bottom"] as const).map((position) => {
-        const played = at(position);
-        return (
-          <div className={`trick__slot trick__slot--${position}`} key={position}>
-            {played && <CardFace card={played.card} />}
-          </div>
-        );
-      })}
-      {showingLast && (
-        <span className="trick__caption">{nameOf(names, game.lastTrick!.winner)} took it</span>
-      )}
-      {game.heartsBroken && game.phase === "playing" && <span className="trick__broken">♥ broken</span>}
     </div>
   );
 }
