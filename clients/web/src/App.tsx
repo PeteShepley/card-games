@@ -56,7 +56,7 @@ if (mode === "solo") {
 }
 
 // This top-level bootstrap re-runs on any hot update that reaches this
-// module; a second live transport would corrupt the room. Dispose the old
+// module; a second live transport would corrupt the room. Dispose of the old
 // one and reload outright.
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
@@ -68,7 +68,7 @@ if (import.meta.hot) {
 }
 
 // The table + overlay, shared by every mode. `follow` decides whose seat is
-// rendered face-up: the hotseat follows the acting seat; networked modes fix
+// rendered face-up: the hot seat follows the acting seat; networked modes fix
 // the view to the viewer's own seat. Seat names come from the hand contract.
 interface GameViewProps {
   submit: (action: Action) => void;
