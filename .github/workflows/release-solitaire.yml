@@ -1,0 +1,64 @@
+name: Release solitaire
+
+# Build games/solitaire once per environment and publish as a GitHub Release
+# (tag solitaire-v0.<run>). Deploy runs from operations:
+# `scripts/deploy game solitaire <env> solitaire-v0.<run>`.
+#
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "games/solitaire/**"
+      - "packages/**"
+      - "package-lock.json"
+      - ".github/workflows/release-solitaire.yml"
+
+permissions:
+  contents: write
+
+concurrency: release-solitaire-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test --workspace=@card-games/card-kit --workspace=solitaire
+
+      - name: Build (prod)
+        run: |
+          npm run build --workspace=solitaire
+          tar -czf dist-prod.tgz -C games/solitaire/dist .
+          rm -rf games/solitaire/dist
+        env:
+          VITE_BASE_PATH: /solitaire/
+
+      - name: Build (stage)
+        run: |
+          npm run build --workspace=solitaire
+          tar -czf dist-stage.tgz -C games/solitaire/dist .
+          rm -rf games/solitaire/dist
+        env:
+          VITE_BASE_PATH: /solitaire/
+
+      - name: Manifest
+        run: |
+          jq -n --arg sha "$GITHUB_SHA" \
+            '{type:"static", mode:"spa", base_path:"/solitaire/", commit:$sha}' > manifest.json
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="solitaire-v0.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" dist-prod.tgz dist-stage.tgz manifest.json \
+            --title "$TAG" \
+            --notes "Build of ${GITHUB_SHA:0:7} for game.peteshepley.com/solitaire"
