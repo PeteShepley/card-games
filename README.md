@@ -18,6 +18,7 @@ games/gin-rummy/     2 players: engine, Pixi table, HUD (see its DESIGN.md)
 games/crazy-eights/  2-6 players: engine, DOM table
 games/hearts/        4 players: passing, no trump, game to 100
 games/spades/        4 players in partnerships: bidding, spades trump, game to 500
+games/solitaire/     1 player, Klondike: no relay; undo, saved games, ?seed= deals
 ```
 
 Every game keeps the same invariant: **state is a pure function of
