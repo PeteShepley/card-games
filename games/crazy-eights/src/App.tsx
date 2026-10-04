@@ -1,8 +1,12 @@
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
+import { NO_BOTS, offlineTable } from "@card-games/card-kit/bots/seats.ts";
+import type { BotSeats } from "@card-games/card-kit/bots/seats.ts";
+import { useBots } from "@card-games/card-kit/bots/useBots.ts";
 import { createLoopbackTransport } from "@card-games/card-kit/net/loopback.ts";
 import type { LoopbackTransport } from "@card-games/card-kit/net/loopback.ts";
 import { RelayApp } from "@card-games/card-kit/RelayApp.tsx";
+import { decide } from "./bot.ts";
 import { Table } from "./Table.tsx";
 import { CRAZY_EIGHTS } from "./game.ts";
 import { asContractTarget, createGameStore } from "./store.ts";
@@ -59,13 +63,16 @@ if (import.meta.hot) {
 function GameView({
   submit,
   follow,
-  banner
+  banner,
+  bots = NO_BOTS
 }: {
   submit: (action: Action) => void;
   follow: "acting" | "viewer";
   banner?: ReactNode;
+  bots?: BotSeats;
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  useBots(snapshot.game, bots, decide, submit);
   const game = snapshot.game;
   const perspective: Seat =
     follow === "acting"
@@ -76,12 +83,20 @@ function GameView({
 
 function NetworkedApp() {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  // Set once the player picks "Play the computer": no relay, this store.
+  const [offline, setOffline] = useState<BotSeats | null>(null);
+  if (offline) return <GameView submit={(action) => store.apply(action)} follow="viewer" bots={offline} />;
   return (
     <RelayApp
       game={CRAZY_EIGHTS}
       target={target}
       inGame={snapshot.game !== null}
-      renderGame={(submit, banner) => <GameView submit={submit} follow="viewer" banner={banner} />}
+      renderGame={(submit, banner, bots) => <GameView submit={submit} follow="viewer" banner={banner} bots={bots} />}
+      onPlayComputer={(name, count) => {
+        const table = offlineTable(name, count);
+        store.start({ seed: table.seed, seats: table.seats, dealer: "a", viewerSeat: "a", names: table.names });
+        setOffline(table.bots);
+      }}
     />
   );
 }

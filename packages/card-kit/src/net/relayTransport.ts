@@ -7,6 +7,7 @@ import type {
   Stamped,
   WireMessage
 } from "@peteshepley/game-relay/protocol";
+import type { BotLobbyMessage } from "../bots/seats.ts";
 import { contractOf } from "./types.ts";
 import type { ContractTarget, GameInfo } from "./types.ts";
 
@@ -32,6 +33,9 @@ export interface RelayTransport<A extends Action> {
   join(code: string, name: string): void;
   reconnect(session: Session): void;
   begin(): void;
+  // The creator fills an empty seat with a computer player, or takes one out.
+  addBot(name: string): void;
+  removeBot(seat: SeatId): void;
   submit(action: A): void;
   destroy(): void;
 }
@@ -98,9 +102,9 @@ export function createRelayTransport<A extends Action>(options: {
   let expectedSeq = 1;
   let contractApplied = false;
   let pinger: ReturnType<typeof setInterval> | null = null;
-  const outbox: WireMessage[] = [];
+  const outbox: (WireMessage | BotLobbyMessage)[] = [];
 
-  const send = (message: WireMessage) => {
+  const send = (message: WireMessage | BotLobbyMessage) => {
     if (socket.readyState === WebSocket.OPEN)
       socket.send(JSON.stringify(message));
     else outbox.push(message);
@@ -209,6 +213,12 @@ export function createRelayTransport<A extends Action>(options: {
     },
     begin() {
       send({ kind: "begin" });
+    },
+    addBot(name) {
+      send({ kind: "addBot", name, rnd: randomUint32() });
+    },
+    removeBot(seat) {
+      send({ kind: "removeBot", seat });
     },
     submit(action) {
       // Clients never apply their own actions: the server stamps and echoes.
