@@ -223,9 +223,14 @@ body {
    it takes the full row (stretch, even in the four-seat tables' centred
    column) and the cards measure their overlap against that. */
 .hand {
+  /* Positioned, so the swipe magnifier measures cards against it. */
+  position: relative;
   container-type: inline-size;
   align-self: stretch;
   display: flex;
+  /* A swipe along the hand magnifies the cards (handSwipe.ts), so the
+     browser must not take it for a scroll. */
+  touch-action: none;
   justify-content: center;
   padding-top: 1rem;
   min-height: calc(var(--card-h) + 1rem);
@@ -281,6 +286,21 @@ body {
 
 .hand__card--dim .card {
   filter: brightness(0.65);
+}
+
+/* A disabled card lets a press through to the hand row, so a swipe can
+   start anywhere along it. */
+.hand__card:disabled {
+  pointer-events: none;
+}
+
+/* Mid-swipe: each card grows by its --mag (set per frame by handSwipe.ts)
+   from its bottom edge, the end cards growing inward. */
+.hand[data-swiping] .hand__card {
+  position: relative;
+  transform-origin: var(--mag-origin, 50%) 100%;
+  transform: translateY(calc((1 - var(--mag, 1)) * 0.75rem)) scale(var(--mag, 1));
+  transition-duration: 60ms;
 }
 
 .hud__score {

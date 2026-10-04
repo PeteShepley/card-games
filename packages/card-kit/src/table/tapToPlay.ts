@@ -30,5 +30,7 @@ export function useTapToPlay(resetKey: string) {
     }
   };
   const isLifted = (card: Card) => !!lifted && sameCard(lifted, card);
-  return { isLifted, tap };
+  // A swipe that ends on a card lifts it, as a first tap would.
+  const lift = (card: Card) => setState({ key: resetKey, card });
+  return { isLifted, tap, lift };
 }

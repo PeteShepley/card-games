@@ -5,6 +5,7 @@ import type { Card, Suit } from "@card-games/card-kit/cards.ts";
 import { hudButton, hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
 import { CardFace, Nameplate, OpponentSeat } from "@card-games/card-kit/table/Cards.tsx";
 import { handStyle } from "@card-games/card-kit/table/labels.ts";
+import { useHandSwipe } from "@card-games/card-kit/table/handSwipe.ts";
 import { useTapToPlay } from "@card-games/card-kit/table/tapToPlay.ts";
 import { canDraw, legalActions, nextSeat, playableCards, topCard } from "./engine/game.ts";
 import type { Action, EngineState, Seat } from "./engine/game.ts";
@@ -29,7 +30,8 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
   // hand on this turn.
   const hand = game?.hands[perspective] ?? [];
   const myTurn = !!game && game.phase === "play" && game.toAct === perspective;
-  const { isLifted, tap } = useTapToPlay(`${perspective}:${myTurn}:${hand.map(cardKey).join(",")}`);
+  const { isLifted, tap, lift } = useTapToPlay(`${perspective}:${myTurn}:${hand.map(cardKey).join(",")}`);
+  const swipe = useHandSwipe();
 
   if (!game || game.phase === "awaitingStart") {
     return (
@@ -114,7 +116,14 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
         )}
       </div>
 
-      <div className="hand" style={handStyle(hand.length)}>
+      <div
+        className="hand"
+        style={handStyle(hand.length)}
+        {...swipe((index) => {
+          const card = hand[index];
+          if (myTurn && playable.some((each) => sameCard(each, card))) lift(card);
+        })}
+      >
         {hand.map((card) => {
           const live = myTurn && playable.some((each) => sameCard(each, card));
           return (

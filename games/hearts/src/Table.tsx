@@ -6,6 +6,7 @@ import { hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
 import { CardFace, Nameplate, OpponentSeat } from "@card-games/card-kit/table/Cards.tsx";
 import { cardLabel, handStyle } from "@card-games/card-kit/table/labels.ts";
 import { seatPositions } from "@card-games/card-kit/table/seats.ts";
+import { useHandSwipe } from "@card-games/card-kit/table/handSwipe.ts";
 import { useTapToPlay } from "@card-games/card-kit/table/tapToPlay.ts";
 import { TrickArea } from "@card-games/card-kit/table/Trick.tsx";
 import { cardPoints, legalPlays, passTarget } from "./engine/game.ts";
@@ -30,7 +31,8 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
   const [picked, setPicked] = useState<{ key: string; cards: Card[] }>({ key: "", cards: [] });
   // Before the early return, as hooks must be: a lift lasts for this view
   // of this hand on this turn.
-  const { isLifted, tap } = useTapToPlay(
+  const swipe = useHandSwipe();
+  const { isLifted, tap, lift } = useTapToPlay(
     game ? `${game.handNumber}:${perspective}:${game.toAct}:${game.trick.length}` : ""
   );
 
@@ -125,7 +127,15 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
             </button>
           )}
         </div>
-        <div className="hand" style={handStyle(hand.length, 10)}>
+        <div
+          className="hand"
+          style={handStyle(hand.length, 10)}
+          {...swipe((index) => {
+            // While passing a swipe only previews; picking stays a tap.
+            const card = hand[index];
+            if (myTurn && legal.some((each) => sameCard(each, card))) lift(card);
+          })}
+        >
           {hand.map((card) => {
             const isPicked = (alreadyPassed ?? chosen).some((each) => sameCard(each, card));
             const live = passing || (myTurn && legal.some((each) => sameCard(each, card)));
