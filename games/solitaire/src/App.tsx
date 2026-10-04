@@ -13,10 +13,17 @@ const params = new URLSearchParams(window.location.search);
 const linkedSeed = params.has("seed") ? Number(params.get("seed")) >>> 0 : null;
 const linkedDraw: DrawCount = params.get("draw") === "3" ? 3 : 1;
 
-const store = createGameStore({ seed: linkedSeed ?? randomSeed(), drawCount: linkedDraw, slot: localSlot("solitaire-game") });
+const store = createGameStore({
+  seed: linkedSeed ?? randomSeed(),
+  drawCount: linkedDraw,
+  slot: localSlot("solitaire-game")
+});
 // A shared link beats the saved game when they're different deals.
 const resumed = store.getSnapshot().game;
-if (linkedSeed !== null && (resumed.seed !== linkedSeed || resumed.drawCount !== linkedDraw)) {
+if (
+  linkedSeed !== null &&
+  (resumed.seed !== linkedSeed || resumed.drawCount !== linkedDraw)
+) {
   store.newGame(linkedSeed, linkedDraw);
 }
 
@@ -35,7 +42,10 @@ syncAddressBar();
 if (import.meta.hot) import.meta.hot.accept(() => window.location.reload());
 
 function App() {
-  const { game, log } = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { game, log } = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot
+  );
   return (
     <Table
       game={game}
