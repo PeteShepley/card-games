@@ -10,7 +10,11 @@ packages/card-kit/   shared by every game
   assets/cards + cardAssets   the 52 card faces (see assets/cards/PROVENANCE.md)
   handOrder, fireworks, hudStyles
   net/                   relay + loopback transports, GameInfo / ContractTarget
-  Lobby, RelayApp        create / join / wait / reconnect UI over the relay
+  Lobby, RelayApp        create / join / wait / reconnect UI over the relay; play
+                         the computer offline, or add computers to a room
+  bots/                  the computer-player harness: which seats are bots, which
+                         client runs them (first connected human), the move
+                         scheduler + useBots hook, trick-taking helpers
   tricks                 follow suit, trick winner (optional trump), hand sorting
   canvas/                the Pixi card table every game draws on: the
                          engine (sprites ease to a spec; tap, drag, swipe-magnify),
@@ -29,6 +33,19 @@ games/solitaire/     1 player, Klondike: no relay; undo, saved games, ?seed= dea
 Every game keeps the same invariant: **state is a pure function of
 (seed, ordered action log).** The relay stamps the order and never runs a
 game's rules. Each client applies only stamped actions.
+
+## Computer players
+
+Every multiplayer game has a computer opponent in `src/bot.ts`: a pure
+`decide(state, seat)` that returns the move that seat would make now, or null.
+Tests play whole games with bots in every seat. In the lobby you can play the
+computer with no relay at all, or, as a room's creator, fill empty seats with
+computer players. A bot's moves are ordinary actions. The first connected
+human's client submits them, and if that player drops, the next one takes over.
+
+Online bots need the relay's `addBot` / `removeBot` messages (game-relay
+`bots` branch). Until card-kit pins a game-relay release that has them, they
+are declared in `packages/card-kit/src/bots/seats.ts`.
 
 ## Development
 

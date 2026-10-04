@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import type { Action } from "@peteshepley/game-relay/protocol";
+import type { Action, Roster, SeatId } from "@peteshepley/game-relay/protocol";
+import { botSeatsFor, computerName } from "./bots/seats.ts";
+import type { BotRosterSeat, BotSeats } from "./bots/seats.ts";
 import { Lobby } from "./Lobby.tsx";
 import type { LobbyUiState } from "./Lobby.tsx";
 import { hudButton } from "./hudStyles.ts";
@@ -17,8 +19,13 @@ interface RelayAppProps<A extends Action> {
   target: ContractTarget<A>;
   // True once the game's store holds a game, i.e. the contract has landed.
   inGame: boolean;
-  // The game's table. `banner` is the connection-trouble overlay to show.
-  renderGame: (submit: (action: A) => void, banner: ReactNode) => ReactNode;
+  // The game's table. `banner` is the connection-trouble overlay to show;
+  // `bots` says which seats are computer players and whether this client
+  // plays them.
+  renderGame: (submit: (action: A) => void, banner: ReactNode, bots: BotSeats) => ReactNode;
+  // Offered in the lobby: play against the computer with no relay at all.
+  // The game starts its own store with you and `seats - 1` computers.
+  onPlayComputer?: (name: string, seats: number) => void;
 }
 
 // Networked play: owns the relay transport and the lobby state machine. The
@@ -30,9 +37,14 @@ export function RelayApp<A extends Action>({
   game,
   target,
   inGame,
-  renderGame
+  renderGame,
+  onPlayComputer
 }: RelayAppProps<A>) {
   const [lobbyState, setLobbyState] = useState<LobbyUiState>({ phase: "menu" });
+  // Who is at the table, kept through the game (presence comes as roster
+  // updates), and which seat is ours: together they say who plays the bots.
+  const [roster, setRoster] = useState<Roster | null>(null);
+  const [mySeat, setMySeat] = useState<SeatId | null>(null);
   const [link, setLink] = useState<"open" | "retrying" | "lost">("open");
   const transportRef = useRef<RelayTransport<A> | null>(null);
   const retryRef = useRef<{ attempts: number; timer: number | null }>({
@@ -64,6 +76,7 @@ export function RelayApp<A extends Action>({
   const handleEvent = (event: LobbyEvent) => {
     switch (event.type) {
       case "seated":
+        setMySeat(event.seat);
         setLobbyState((prev) => ({
           phase: "waiting",
           code: event.code,
@@ -72,6 +85,7 @@ export function RelayApp<A extends Action>({
         }));
         break;
       case "roster":
+        setRoster(event.roster);
         setLobbyState((prev) =>
           prev.phase === "waiting" ? { ...prev, roster: event.roster } : prev
         );
@@ -149,7 +163,10 @@ export function RelayApp<A extends Action>({
         )}
       </div>
     );
-    return renderGame((action) => transportRef.current?.submit(action), banner);
+    // A mid-game reconnect isn't re-announced as a seat; the stored session
+    // still knows it.
+    const seat = mySeat ?? loadSession(game)?.seat ?? null;
+    return renderGame((action) => transportRef.current?.submit(action), banner, botSeatsFor(roster, seat));
   }
 
   return (
@@ -165,6 +182,15 @@ export function RelayApp<A extends Action>({
         setLobbyState({ phase: "connecting" });
       }}
       onBegin={() => transportRef.current?.begin()}
+      onAddBot={() => {
+        const taken = ((roster?.seats ?? []) as readonly BotRosterSeat[]).map((seat) => seat.id);
+        const next = Array.from({ length: game.maxSeats }, (_, index) => String.fromCharCode(97 + index)).find(
+          (id) => !taken.includes(id)
+        );
+        transportRef.current?.addBot(computerName(next ?? "?", game.maxSeats));
+      }}
+      onRemoveBot={(seat) => transportRef.current?.removeBot(seat)}
+      onPlayComputer={onPlayComputer}
     />
   );
 }

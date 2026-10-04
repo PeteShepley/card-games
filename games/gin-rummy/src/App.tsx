@@ -6,6 +6,10 @@ import { GIN_RUMMY } from "./game.ts";
 import { createLoopbackTransport } from "@card-games/card-kit/net/loopback.ts";
 import type { LoopbackTransport } from "@card-games/card-kit/net/loopback.ts";
 import { RelayApp } from "@card-games/card-kit/RelayApp.tsx";
+import { NO_BOTS, offlineTable } from "@card-games/card-kit/bots/seats.ts";
+import type { BotSeats } from "@card-games/card-kit/bots/seats.ts";
+import { useBots } from "@card-games/card-kit/bots/useBots.ts";
+import { decide } from "./bot.ts";
 import { Feed } from "./Feed.tsx";
 import { Hud, Nameplate, WinBanner } from "./Hud.tsx";
 import { hudButton, hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
@@ -75,10 +79,13 @@ interface GameViewProps {
   follow: "acting" | "viewer";
   noGameText: string;
   banner?: React.ReactNode;
+  // Computer seats, and whether this client plays them.
+  bots?: BotSeats;
 }
 
-function GameView({ submit, follow, noGameText, banner }: GameViewProps) {
+function GameView({ submit, follow, noGameText, banner, bots = NO_BOTS }: GameViewProps) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  useBots(snapshot.game, bots, decide, submit);
   // Where the Pixi table put things. Pixi's resizeTo stays the single resize
   // owner; the scene reports its geometry so the DOM chrome can line up with
   // the piles and the card rows instead of guessing.
@@ -253,19 +260,37 @@ function GameView({ submit, follow, noGameText, banner }: GameViewProps) {
 // the connection; the table renders once the contract lands in the store.
 function NetworkedApp() {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  // Set once the player picks "Play the computer": no relay, this store.
+  const [offline, setOffline] = useState<BotSeats | null>(null);
+  if (offline) {
+    return (
+      <GameView
+        submit={(action) => store.apply(action)}
+        follow="viewer"
+        noGameText="no game"
+        bots={offline}
+      />
+    );
+  }
   return (
     <RelayApp
       game={GIN_RUMMY}
       target={target}
       inGame={snapshot.game !== null}
-      renderGame={(submit, banner) => (
+      renderGame={(submit, banner, bots) => (
         <GameView
           submit={submit}
           follow="viewer"
           noGameText="connecting…"
           banner={banner}
+          bots={bots}
         />
       )}
+      onPlayComputer={(name) => {
+        const table = offlineTable(name, 2);
+        store.start({ seed: table.seed, dealer: "a", viewerSeat: "a", names: { a: table.names.a, b: table.names.b } });
+        setOffline(table.bots);
+      }}
     />
   );
 }

@@ -1,6 +1,10 @@
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
+import { NO_BOTS, offlineTable } from "@card-games/card-kit/bots/seats.ts";
+import type { BotSeats } from "@card-games/card-kit/bots/seats.ts";
+import { useBots } from "@card-games/card-kit/bots/useBots.ts";
 import { RelayApp } from "@card-games/card-kit/RelayApp.tsx";
+import { decide } from "./bot.ts";
 import { Table } from "./Table.tsx";
 import { SPADES } from "./game.ts";
 import { asContractTarget, createGameStore } from "./store.ts";
@@ -41,25 +45,36 @@ function actingSeat(game: EngineState | null): Seat {
 function GameView({
   submit,
   follow,
-  banner
+  banner,
+  bots = NO_BOTS
 }: {
   submit: (action: Action) => void;
   follow: "acting" | "viewer";
   banner?: ReactNode;
+  bots?: BotSeats;
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  useBots(snapshot.game, bots, decide, submit);
   const perspective = follow === "acting" ? actingSeat(snapshot.game) : (snapshot.viewerSeat ?? "a");
   return <Table snapshot={snapshot} perspective={perspective} submit={submit} banner={banner} />;
 }
 
 function NetworkedApp() {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  // Set once the player picks "Play the computer": no relay, this store.
+  const [offline, setOffline] = useState<BotSeats | null>(null);
+  if (offline) return <GameView submit={(action) => store.apply(action)} follow="viewer" bots={offline} />;
   return (
     <RelayApp
       game={SPADES}
       target={target}
       inGame={snapshot.game !== null}
-      renderGame={(submit, banner) => <GameView submit={submit} follow="viewer" banner={banner} />}
+      renderGame={(submit, banner, bots) => <GameView submit={submit} follow="viewer" banner={banner} bots={bots} />}
+      onPlayComputer={(name, count) => {
+        const table = offlineTable(name, count);
+        store.start({ seed: table.seed, seats: table.seats, dealer: "a", viewerSeat: "a", names: table.names });
+        setOffline(table.bots);
+      }}
     />
   );
 }
