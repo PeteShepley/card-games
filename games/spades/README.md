@@ -30,9 +30,9 @@ shared game relay.
   and replay is deterministic.
 - `src/store.ts`, `src/status.ts`: the snapshot store and the table's
   wording, including per-team hand summaries.
-- `src/Table.tsx`, `src/index.css`: the kit's four-seat layout and trick
-  cross, plus the bid picker, the Us/Them scoreboard, and partner and dealer
-  tags.
+- `src/Table.tsx`, `src/index.css`: the kit's canvas four-seat table, plus
+  the bid picker (over the empty trick), the Us/Them scoreboard, and partner
+  and dealer tags.
 - `src/App.tsx`: networked play by default; `?solo` is a four-seat hot seat.
 
 As in Hearts, every client holds the whole deal and the UI hides the other

@@ -37,7 +37,7 @@ export function eightsGeometry(width: number, height: number, stackHeight: numbe
       ? Math.min((below - COUNT_H) / (piles + handHeight(1)), playW / 3)
       : Math.min((below - stackHeight - COUNT_H) / (piles + handHeight(1)), width / 5),
     34,
-    110
+    130
   );
   const pileW = cardW * 0.9;
   const handBottom = height - pad;

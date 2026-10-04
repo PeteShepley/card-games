@@ -27,8 +27,9 @@ as the fourth player joins.
     `tricks.ts`, which Spades shares.
 - `src/store.ts`, `src/status.ts`: the snapshot store and the table's
   wording. A pass is announced, never shown.
-- `src/Table.tsx`, `src/index.css`: the kit's four-seat layout and trick
-  cross (the next player sits on your left), plus the three-card pass picker.
+- `src/Table.tsx`, `src/index.css`: the kit's canvas four-seat table (the
+  next player sits on your left), plus the three-card pass picker; passed
+  cards fly to their receiver.
 - `src/App.tsx`: networked play by default; `?solo` is a four-seat hot seat.
 
 Every client holds the full deal (that's what lets state replay from the

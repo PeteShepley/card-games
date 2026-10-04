@@ -1,6 +1,7 @@
-/* Shared table look for the DOM-rendered games: the felt, card faces and
-   backs, nameplates, the HUD strip, the hand row and overlays. Each game
-   imports this once and adds its own layout on top. */
+/* Shared table look: the felt, nameplates, the HUD strip, overlays and
+   panels, and the DOM that sits over a canvas table. The cards themselves
+   are drawn on the canvas (canvas/engine.ts). Each game imports this once
+   and adds its own bits on top. */
 
 :root {
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
@@ -8,9 +9,6 @@
   color-scheme: light dark;
   --felt: #2f5d34;
   --felt-dark: #244a29;
-  --card-w: clamp(52px, 9vw, 92px);
-  --card-h: calc(var(--card-w) * 1.4);
-  --mini-w: clamp(18px, 3vw, 28px);
   --accent: #7fd1ff;
 }
 
@@ -34,8 +32,7 @@ body {
   padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
   background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
   color: #fff;
-  /* A last resort on a very short screen: scroll rather than clip the hand. */
-  overflow: hidden auto;
+  overflow: hidden;
   /* No double-tap zoom: a quick second tap on a card is a move. */
   touch-action: manipulation;
 }
@@ -48,40 +45,6 @@ body {
 .table--idle {
   grid-template-rows: 1fr;
   place-items: center;
-}
-
-/* --- cards --- */
-
-.card {
-  display: block;
-  width: var(--card-w);
-  height: var(--card-h);
-  border-radius: calc(var(--card-w) * 0.07);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  background: #fff;
-  user-select: none;
-}
-
-.card--back {
-  box-sizing: border-box;
-  border: 3px solid #f4f4f4;
-  background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0 6px, transparent 6px 12px),
-    #3a5aa0;
-}
-
-.card--empty {
-  box-sizing: border-box;
-  border: 2px dashed rgba(255, 255, 255, 0.35);
-  background: transparent;
-  box-shadow: none;
-}
-
-.card--mini {
-  width: var(--mini-w);
-  height: calc(var(--mini-w) * 1.4);
-  border-width: 2px;
-  border-radius: 3px;
 }
 
 .hud {
@@ -136,31 +99,6 @@ body {
   }
 }
 
-/* --- opponents --- */
-
-.opponents {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem 1.5rem;
-}
-
-.opponent {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.opponent__fan {
-  display: flex;
-  min-height: calc(var(--mini-w) * 1.4);
-}
-
-.opponent__fan .card + .card {
-  margin-left: calc(var(--mini-w) * -0.55);
-}
-
 .opponent__count {
   opacity: 0.7;
   font-size: 0.75em;
@@ -182,14 +120,9 @@ body {
 /* --- feed --- */
 
 .feed {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
   margin: 0;
   padding: 0;
   list-style: none;
-  max-width: 14rem;
   font-size: 0.8rem;
   opacity: 0.85;
   pointer-events: none;
@@ -197,110 +130,6 @@ body {
 
 .feed li:last-child {
   font-weight: 600;
-}
-
-/* A phone has no room for the log beside the table, so it shrinks to the
-   newest line, in the flow just above your own controls. */
-@media (max-width: 720px) {
-  .feed {
-    position: static;
-    transform: none;
-    max-width: none;
-    justify-self: center;
-    text-align: center;
-  }
-  .feed li:not(:last-child) {
-    display: none;
-  }
-  .feed li:last-child {
-    font-weight: 500;
-  }
-}
-
-/* --- your hand --- */
-
-/* The row is a size container, so it has no width of its own to offer:
-   it takes the full row (stretch, even in the four-seat tables' centred
-   column) and the cards measure their overlap against that. */
-.hand {
-  /* Positioned, so the swipe magnifier measures cards against it. */
-  position: relative;
-  container-type: inline-size;
-  align-self: stretch;
-  display: flex;
-  /* A swipe along the hand magnifies the cards (handSwipe.ts), so the
-     browser must not take it for a scroll. */
-  touch-action: none;
-  justify-content: center;
-  padding-top: 1rem;
-  min-height: calc(var(--card-h) + 1rem);
-}
-
-.hand__card {
-  padding: 0;
-  border: 0;
-  background: none;
-  transition: transform 120ms ease;
-}
-
-/* The comfortable overlap, or tighter if that is what it takes for the
-   whole hand to fit the row's width. */
-.hand__card + .hand__card {
-  margin-left: calc(
-    -1 * max(var(--card-w) * var(--squeeze), (var(--count) * var(--card-w) - 100cqw) / (var(--count) - 1))
-  );
-}
-
-.hand__card--live {
-  cursor: pointer;
-  transform: translateY(-0.6rem);
-}
-
-.hand__card--live:focus-visible {
-  transform: translateY(-1.1rem);
-  outline: none;
-}
-
-/* Hover only where there is a pointer to hover: a tap would leave it stuck. */
-@media (hover: hover) {
-  .hand__card--live:hover {
-    transform: translateY(-1.1rem);
-  }
-}
-
-/* Lifted by a first tap on a touch screen: clear of its neighbours, waiting
-   for the second tap. */
-.hand__card--lifted {
-  position: relative;
-  z-index: 2;
-  transform: translateY(-1.8rem);
-}
-
-.hand__card--live.hand__card--lifted .card {
-  box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--accent), 0 6px 14px rgba(0, 0, 0, 0.5);
-}
-
-.hand__card--live .card {
-  box-shadow: 0 0 0 3px var(--accent), 0 4px 10px rgba(0, 0, 0, 0.4);
-}
-
-.hand__card--dim .card {
-  filter: brightness(0.65);
-}
-
-/* A disabled card lets a press through to the hand row, so a swipe can
-   start anywhere along it. */
-.hand__card:disabled {
-  pointer-events: none;
-}
-
-/* Mid-swipe: each card grows by its --mag (set per frame by handSwipe.ts)
-   from its bottom edge, the end cards growing inward. */
-.hand[data-swiping] .hand__card {
-  position: relative;
-  transform-origin: var(--mag-origin, 50%) 100%;
-  transform: translateY(calc((1 - var(--mag, 1)) * 0.75rem)) scale(var(--mag, 1));
-  transition-duration: 60ms;
 }
 
 .hud__score {
@@ -371,198 +200,17 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hand__card {
-    transition: none;
-  }
   .nameplate--active .nameplate__dot {
     animation: none;
   }
 }
 
-/* --- four-seat tables (Hearts, Spades): seats around a trick cross --- */
-
-.table--four {
-  grid-template-columns: 1fr auto 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    ". top ."
-    "left trick right"
-    "bottom bottom bottom";
-}
-
-.seat--top {
-  grid-area: top;
-}
-
-.seat--left {
-  grid-area: left;
-  justify-self: start;
-  align-self: center;
-}
-
-.seat--right {
-  grid-area: right;
-  justify-self: end;
-  align-self: center;
-}
-
-.seat--bottom {
-  grid-area: bottom;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* --- the trick --- */
-
-.trick {
-  grid-area: trick;
-  position: relative;
-  align-self: center;
-  display: grid;
-  grid-template-columns: repeat(3, var(--card-w));
-  grid-template-rows: repeat(3, calc(var(--card-h) * 0.62));
-  grid-template-areas:
-    ". top ."
-    "left . right"
-    ". bottom .";
-  gap: 0.25rem;
-  justify-items: center;
-  align-items: center;
-}
-
-.trick__slot--top {
-  grid-area: top;
-}
-.trick__slot--left {
-  grid-area: left;
-}
-.trick__slot--right {
-  grid-area: right;
-}
-.trick__slot--bottom {
-  grid-area: bottom;
-}
-
-.trick--last .card {
-  filter: brightness(0.7);
-}
-
-.trick__caption,
-.trick__note {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 0.8rem;
-}
-
-.trick__caption {
-  top: 50%;
-  margin-top: -0.6rem;
-  font-weight: 600;
-}
-
-.trick__note {
-  bottom: -1.6rem;
-  opacity: 0.85;
-}
-
-/* Narrow: the three opponents share the top row, and the newest feed line
-   gets a row of its own above your hand. Matches the feed's breakpoint. */
-@media (max-width: 720px) {
-  .table--four {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto 1fr auto auto;
-    grid-template-areas:
-      "left top right"
-      "trick trick trick"
-      "feed feed feed"
-      "bottom bottom bottom";
-  }
-  .table--four .feed {
-    grid-area: feed;
-  }
-  .seat--left,
-  .seat--right {
-    justify-self: center;
-    align-self: start;
-  }
-  .trick {
-    justify-self: center;
-    grid-template-rows: repeat(3, calc(var(--card-h) * 0.5));
-    gap: 0.15rem;
-  }
-}
-
-/* --- phones --- */
-
-/* Narrow (portrait) or short (landscape): the compact table. */
+/* A phone: a tighter HUD. */
 @media (max-width: 640px), (max-height: 500px) {
-  .table {
-    gap: 0.5rem;
-    padding: 0.5rem 0.5rem calc(0.75rem + env(safe-area-inset-bottom));
-  }
-  /* Opponents are a nameplate each: the fan of backs costs width that
-     three seats across cannot spare, and the count says the same thing. */
-  .opponents {
-    gap: 0.4rem 0.75rem;
-  }
-  .opponent {
-    min-width: 0;
-    max-width: 100%;
-  }
-  .opponent__fan {
-    display: none;
-  }
-  .nameplate {
-    max-width: 100%;
-    min-width: 0;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.1rem 0.35rem;
-    white-space: normal;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    text-align: center;
-  }
-  .opponent__score {
-    font-size: 0.7rem;
-    text-align: center;
-  }
   .hud {
     gap: 0.35rem 0.5rem;
     padding: 0.35rem 0.6rem;
     font-size: 0.85rem;
-  }
-  .hand {
-    padding-top: 0.75rem;
-  }
-}
-
-/* The left seat owns the left edge here, so the feed sits low on the
-   left, above the hand. */
-@media (min-width: 721px) {
-  .table--four .feed {
-    top: auto;
-    bottom: calc(var(--card-h) + 4.5rem);
-    transform: none;
-  }
-}
-
-/* A landscape phone: height is what runs out, so the cards size by it and
-   the trick cross closes up, keeping your hand on screen. */
-@media (max-height: 500px) {
-  :root {
-    --card-w: clamp(36px, 11vh, 92px);
-  }
-  .trick {
-    grid-template-rows: repeat(3, calc(var(--card-h) * 0.45));
-  }
-  .hand {
-    padding-top: 0.6rem;
-    min-height: calc(var(--card-h) + 0.6rem);
   }
 }
 
@@ -680,8 +328,6 @@ body {
 
 /* The log is the newest line in the stack: what just happened. */
 .stack .feed {
-  position: static;
-  transform: none;
   max-width: 100%;
   text-align: center;
   font-size: 0.8rem;

@@ -1,112 +1,19 @@
-/* Solitaire on top of the kit's table.css: a top row (stock, waste,
-   foundations) over seven fanned columns. Cards size to fit seven across. */
+/* Solitaire on top of the kit's table.css: the controls across the top.
+   The cards themselves are drawn on the canvas. */
 
-/* --card-h is redeclared here: the kit's is computed on :root from the
-   kit's --card-w, so it would not follow this one. The height cap keeps a
-   landscape phone's top row and tableau in view. */
-.solitaire {
-  --gap: 0.5rem;
-  --card-w: min(92px, calc((100vw - 2rem - 6 * var(--gap)) / 7), 18vh);
-  --card-h: calc(var(--card-w) * 1.4);
-  grid-template-rows: auto auto 1fr;
-  justify-items: center;
-  overflow-y: auto;
+.solitaire__hud {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 1rem);
+  box-sizing: border-box;
+  transform: translateX(-50%);
 }
 
-.top-row,
-.tableau {
-  display: grid;
-  grid-template-columns: repeat(7, var(--card-w));
-  gap: var(--gap);
-}
-
-.slot {
-  position: relative;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.slot:disabled {
-  cursor: default;
-}
-
-.slot--selected .card {
-  box-shadow: 0 0 0 3px #ffd54f, 0 4px 10px rgba(0, 0, 0, 0.4);
-  transform: translateY(-4px);
-}
-
-.card--empty {
-  display: grid;
-  place-items: center;
-  font-size: calc(var(--card-w) * 0.35);
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.foundation--hearts,
-.foundation--diamonds {
-  color: rgba(255, 150, 150, 0.45);
-}
-
-.slot__recycle {
-  font-size: calc(var(--card-w) * 0.45);
-}
-
-/* Draw-3 fans the top three waste cards across into the spare column. */
-.waste {
-  display: flex;
-}
-
-.waste--3 {
-  grid-column: span 2;
-}
-
-.waste .slot + .slot {
-  margin-left: calc(var(--card-w) * -0.7);
-}
-
-.waste--3 + .spacer {
-  display: none;
-}
-
-/* Columns fan down: hidden cards tight, face-up cards wide enough to read. */
-.column {
-  display: flex;
-  flex-direction: column;
-  min-height: var(--card-h);
-}
-
-.column__card + .column__card {
-  margin-top: calc(var(--card-h) * -0.8);
-}
-
-.column__card--down + .column__card--down {
-  margin-top: calc(var(--card-h) * -0.9);
-}
-
-@media (hover: hover) {
-  .column__card:hover .card {
-    filter: brightness(1.05);
-  }
-}
-
-/* A phone: tighter gutters for bigger cards, more of each face-up card
-   showing to tap, and shorter button labels. The table's padding is
-   0.5rem a side here. */
+/* A phone: shorter button labels. */
 @media (max-width: 640px), (max-height: 500px) {
-  .solitaire {
-    --gap: 0.25rem;
-    --card-w: min(92px, calc((100vw - 1rem - 6 * var(--gap)) / 7), 18vh);
-  }
-  .column__card + .column__card {
-    margin-top: calc(var(--card-h) * -0.7);
-  }
-  .column__card--down + .column__card--down {
-    margin-top: calc(var(--card-h) * -0.88);
-  }
   .wide-only {
     display: none;
   }

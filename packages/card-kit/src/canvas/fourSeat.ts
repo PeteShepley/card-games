@@ -46,7 +46,7 @@ export function fourSeatGeometry(width: number, height: number, stackHeight: num
   const cardW = clamp(
     wide ? Math.min(below / 4.45, playW / 2.7) : Math.min((below - stackHeight) / 4.45, width / 5),
     34,
-    100
+    130
   );
   const trickW = cardW * 0.8;
   const trickH = cardHeight(trickW);
