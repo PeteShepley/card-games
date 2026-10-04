@@ -5,7 +5,6 @@ import type {
   Roster,
   SeatId
 } from "@peteshepley/game-relay/protocol";
-import type { BotRosterSeat } from "./bots/seats.ts";
 import type { GameInfo } from "./net/types.ts";
 
 // The pre-game menu for networked play. Create a room (get a shareable code)
@@ -39,7 +38,12 @@ interface LobbyProps {
   onJoin: (code: string, name: string) => void;
   onBegin: () => void;
   onAddBot: () => void;
+  // Fill every open seat with a computer, then start (fixed-size games,
+  // which can't start until every seat is taken).
+  onFillAndStart: () => void;
   onRemoveBot: (seat: SeatId) => void;
+  // A problem worth telling the creator (the server can't add computers).
+  notice?: string | null;
   // Absent, the menu offers no computer game.
   onPlayComputer?: (name: string, seats: number) => void;
 }
@@ -51,8 +55,10 @@ export function Lobby({
   onJoin,
   onBegin,
   onAddBot,
+  onFillAndStart,
   onRemoveBot,
-  onPlayComputer
+  onPlayComputer,
+  notice
 }: LobbyProps) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -83,16 +89,15 @@ export function Lobby({
         () => setCopied(false)
       );
     };
-    const seats = (state.roster?.seats ?? []) as readonly BotRosterSeat[];
+    const seats = state.roster?.seats ?? [];
+    const open = Math.max(0, game.maxSeats - seats.length);
+    const fixedSize = game.minSeats === game.maxSeats;
     const hasBots = seats.some((seat) => seat.bot);
     // A fixed-size room starts itself when the last human joins; with
-    // computers in it, the creator starts it.
+    // computers in it, or short-handed where the game allows, the creator
+    // starts it.
     const canBegin =
-      state.creator &&
-      (game.minSeats < game.maxSeats || hasBots) &&
-      seats.length >= game.minSeats;
-    const canAddBot =
-      state.creator && seats.length > 0 && seats.length < game.maxSeats;
+      state.creator && (!fixedSize || hasBots) && seats.length >= game.minSeats;
     return (
       <div style={backdrop}>
         <div style={card}>
@@ -106,36 +111,50 @@ export function Lobby({
           <button type="button" style={button} onClick={share}>
             {copied ? "Copied!" : "Copy code"}
           </button>
-          {(game.maxSeats > 2 || hasBots) && seats.length > 0 && (
-            <ul style={rosterList}>
-              {seats.map((seat) => (
-                <li
-                  key={seat.id}
-                  style={{ opacity: seat.connected || seat.bot ? 1 : 0.5 }}
-                >
+          {notice && <p style={errorStyle}>{notice}</p>}
+          {/* Every seat: who's in it, or open - for a friend with the code
+              or, the creator's choice, a computer. */}
+          <ul style={seatList}>
+            {seats.map((seat) => (
+              <li key={seat.id} style={seatRow}>
+                <span style={{ opacity: seat.connected || seat.bot ? 1 : 0.5 }}>
                   {seat.name}
-                  {seat.bot ? " (computer)" : seat.connected ? "" : " (away)"}
-                  {seat.bot && state.creator && (
-                    <button
-                      type="button"
-                      style={linkButton}
-                      onClick={() => onRemoveBot(seat.id)}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </li>
-              ))}
-              <li style={{ opacity: 0.6 }}>
-                {seats.length} of {game.maxSeats} seats filled
+                  <span style={seatTag}>
+                    {seat.bot ? "computer" : seat.connected ? "" : "away"}
+                  </span>
+                </span>
+                {seat.bot && state.creator && (
+                  <button
+                    type="button"
+                    style={linkButton}
+                    onClick={() => onRemoveBot(seat.id)}
+                  >
+                    Remove
+                  </button>
+                )}
               </li>
-            </ul>
-          )}
-          {canAddBot && (
-            <button type="button" style={button} onClick={onAddBot}>
-              {game.maxSeats === 2
-                ? "Play the computer instead"
-                : "Add a computer player"}
+            ))}
+            {Array.from({ length: open }, (_, index) => (
+              <li key={`open-${index}`} style={seatRow}>
+                <span style={{ opacity: 0.6 }}>
+                  Open seat
+                  {!fixedSize && seats.length + index >= game.minSeats
+                    ? " (optional)"
+                    : ""}
+                </span>
+                {state.creator && seats.length > 0 && (
+                  <button type="button" style={linkButton} onClick={onAddBot}>
+                    Add computer
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          {state.creator && fixedSize && open > 0 && seats.length > 0 && (
+            <button type="button" style={button} onClick={onFillAndStart}>
+              {open === 1
+                ? "Fill the open seat with a computer and start"
+                : `Fill the ${open} open seats with computers and start`}
             </button>
           )}
           {canBegin && (
@@ -293,8 +312,32 @@ const primaryButton: CSSProperties = {
   fontWeight: 600
 };
 
-const linkButton: CSSProperties = {
+const seatList: CSSProperties = {
+  margin: 0,
+  padding: 0,
+  listStyle: "none",
+  display: "flex",
+  flexDirection: "column",
+  gap: "0.3rem"
+};
+
+const seatRow: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  padding: "0.35rem 0.6rem",
+  borderRadius: "6px",
+  background: "rgba(255, 255, 255, 0.06)"
+};
+
+const seatTag: CSSProperties = {
   marginLeft: "0.5rem",
+  opacity: 0.6,
+  fontSize: "0.8rem"
+};
+
+const linkButton: CSSProperties = {
   padding: 0,
   border: 0,
   background: "none",
@@ -320,14 +363,6 @@ const codeDisplay: CSSProperties = {
   background: "#111",
   borderRadius: "8px",
   userSelect: "all"
-};
-
-const rosterList: CSSProperties = {
-  margin: 0,
-  paddingLeft: "1.2rem",
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.2rem"
 };
 
 const errorStyle: CSSProperties = {

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { Action, Roster, SeatId } from "@peteshepley/game-relay/protocol";
-import { botSeatsFor, computerName } from "./bots/seats.ts";
-import type { BotRosterSeat, BotSeats } from "./bots/seats.ts";
+import { botSeatsFor, nextComputerName } from "./bots/seats.ts";
+import type { BotSeats } from "./bots/seats.ts";
 import { Lobby } from "./Lobby.tsx";
 import type { LobbyUiState } from "./Lobby.tsx";
 import { hudButton } from "./hudStyles.ts";
@@ -51,6 +51,47 @@ export function RelayApp<A extends Action>({
     attempts: 0,
     timer: null
   });
+  // Computer players asked for and not yet in the roster (several can be
+  // added before the relay answers), whether to start once the room is
+  // full, and the check that the relay answers at all: one that predates
+  // computer players ignores addBot silently.
+  const botsRef = useRef<{
+    pending: string[];
+    startWhenFull: boolean;
+    unanswered: number | null;
+  }>({ pending: [], startWhenFull: false, unanswered: null });
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const requestBot = (latest: Roster | null) => {
+    const name = nextComputerName(latest, botsRef.current.pending, game.maxSeats);
+    botsRef.current.pending.push(name);
+    transportRef.current?.addBot(name);
+    if (botsRef.current.unanswered === null) {
+      botsRef.current.unanswered = window.setTimeout(() => {
+        botsRef.current.unanswered = null;
+        if (botsRef.current.pending.length === 0) return;
+        botsRef.current.pending = [];
+        botsRef.current.startWhenFull = false;
+        setNotice("This game server doesn't support computer players yet.");
+      }, 5000);
+    }
+  };
+
+  // A roster in the lobby: settle the computers asked for, and start a
+  // room that was to start once its open seats were filled.
+  const onLobbyRoster = (next: Roster) => {
+    const bots = botsRef.current;
+    const names = new Set(next.seats.filter((seat) => seat.bot).map((seat) => seat.name));
+    bots.pending = bots.pending.filter((name) => !names.has(name));
+    if (bots.pending.length === 0 && bots.unanswered !== null) {
+      clearTimeout(bots.unanswered);
+      bots.unanswered = null;
+    }
+    if (bots.startWhenFull && !next.started && next.seats.length >= game.maxSeats) {
+      bots.startWhenFull = false;
+      transportRef.current?.begin();
+    }
+  };
 
   // The transport reports a dropped socket but never retries by itself, so
   // the retry lives here: a fresh transport replaying the stored session,
@@ -86,6 +127,7 @@ export function RelayApp<A extends Action>({
         break;
       case "roster":
         setRoster(event.roster);
+        onLobbyRoster(event.roster);
         setLobbyState((prev) =>
           prev.phase === "waiting" ? { ...prev, roster: event.roster } : prev
         );
@@ -132,6 +174,7 @@ export function RelayApp<A extends Action>({
     // The retry bookkeeping is mutated in place, never reassigned, so it is
     // safe to capture here for the cleanup to cancel a pending attempt.
     const retry = retryRef.current;
+    const bots = botsRef.current;
     const session = loadSession(game);
     if (session) {
       ensureTransport().reconnect(session);
@@ -140,6 +183,7 @@ export function RelayApp<A extends Action>({
     return () => {
       if (retry.timer !== null) window.clearTimeout(retry.timer);
       retry.timer = null;
+      if (bots.unanswered !== null) window.clearTimeout(bots.unanswered);
       transportRef.current?.destroy();
       transportRef.current = null;
     };
@@ -183,14 +227,20 @@ export function RelayApp<A extends Action>({
       }}
       onBegin={() => transportRef.current?.begin()}
       onAddBot={() => {
-        const taken = ((roster?.seats ?? []) as readonly BotRosterSeat[]).map((seat) => seat.id);
-        const next = Array.from({ length: game.maxSeats }, (_, index) => String.fromCharCode(97 + index)).find(
-          (id) => !taken.includes(id)
-        );
-        transportRef.current?.addBot(computerName(next ?? "?", game.maxSeats));
+        setNotice(null);
+        requestBot(roster);
+      }}
+      onFillAndStart={() => {
+        setNotice(null);
+        const open = game.maxSeats - (roster?.seats.length ?? 0) - botsRef.current.pending.length;
+        for (let i = 0; i < open; i++) requestBot(roster);
+        botsRef.current.startWhenFull = true;
+        // Already full (the last request is in flight): the roster that
+        // confirms it starts the room.
       }}
       onRemoveBot={(seat) => transportRef.current?.removeBot(seat)}
       onPlayComputer={onPlayComputer}
+      notice={notice}
     />
   );
 }

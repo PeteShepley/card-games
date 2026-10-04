@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { createBotRunner } from "./runner.ts";
-import { botRunner, botSeatsFor, offlineTable } from "./seats.ts";
+import { botRunner, botSeatsFor, nextComputerName, offlineTable } from "./seats.ts";
 
 // A toy game: a counter, and whoever's turn it is adds one.
 interface Toy {
@@ -124,4 +124,18 @@ test("an offline table seats you first and computers in the rest", () => {
   });
   expect(table.bots).toEqual({ seats: ["b", "c", "d"], runner: true });
   expect(offlineTable("Pat", 2).names.b).toBe("Computer");
+});
+
+test("computers added before the relay answers still get distinct names", () => {
+  const lobby = roster([{ id: "a", connected: true }]);
+  expect(nextComputerName(lobby, [], 4)).toBe("Computer B");
+  expect(nextComputerName(lobby, ["Computer B"], 4)).toBe("Computer C");
+  expect(nextComputerName(lobby, ["Computer B", "Computer C"], 4)).toBe("Computer D");
+  // A human in seat b: the next computer skips past them.
+  const withFriend = roster([
+    { id: "a", connected: true },
+    { id: "b", connected: true }
+  ]);
+  expect(nextComputerName(withFriend, [], 4)).toBe("Computer C");
+  expect(nextComputerName(lobby, [], 2)).toBe("Computer");
 });
