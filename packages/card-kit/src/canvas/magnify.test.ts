@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { focusAt, magnification } from "./handSwipe.ts";
+import { focusAt, magnification } from "./magnify.ts";
 
 // Five cards 40px wide, overlapped so each shows a 20px strip: lefts at
 // 0, 20, 40, 60, 80, the last one whole to 120.

@@ -1,58 +1,13 @@
-/* Crazy Eights layout on top of the kit's table.css: opponents, the piles
-   and the 8s' suit picker. */
+/* Crazy Eights additions on top of the kit's table.css: the badge naming
+   the suit an 8 called, and the 8s' suit picker. The cards themselves are
+   drawn on the canvas. */
 
-.table {
-  grid-template-rows: auto 1fr auto auto;
-}
-
-.table--idle {
-  grid-template-rows: 1fr;
-}
-
-/* --- piles --- */
-
-.center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--card-w) * 0.5);
-}
-
-.pile {
-  position: relative;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-}
-
-button.pile:disabled {
-  cursor: default;
-}
-
-.pile--live {
-  cursor: pointer;
-}
-
-.pile--live .card {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.pile__count {
-  position: absolute;
-  left: 50%;
-  bottom: -1.4rem;
-  transform: translateX(-50%);
-  font-size: 0.75rem;
-  opacity: 0.8;
-}
-
+/* Placed at the discard pile's top-right corner. */
 .suit-badge {
   position: absolute;
-  top: -0.6rem;
-  right: -0.6rem;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
   width: 2rem;
   height: 2rem;
   display: grid;
@@ -96,11 +51,4 @@ button.pile:disabled {
 .suit-choice--hearts,
 .suit-choice--diamonds {
   color: #c62828;
-}
-
-@media (max-width: 640px) {
-  .center {
-    gap: calc(var(--card-w) * 0.35);
-    padding-bottom: 1.4rem;
-  }
 }

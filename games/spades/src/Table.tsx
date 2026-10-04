@@ -1,13 +1,10 @@
 import type { ReactNode } from "react";
-import { cardKey, sameCard } from "@card-games/card-kit/cards.ts";
+import { sameCard } from "@card-games/card-kit/cards.ts";
 import type { Card } from "@card-games/card-kit/cards.ts";
+import { FourSeatTable } from "@card-games/card-kit/canvas/FourSeatTable.tsx";
 import { hudButton, hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
-import { CardFace, Nameplate, OpponentSeat } from "@card-games/card-kit/table/Cards.tsx";
-import { cardLabel, handStyle } from "@card-games/card-kit/table/labels.ts";
-import { seatPositions } from "@card-games/card-kit/table/seats.ts";
-import { useHandSwipe } from "@card-games/card-kit/table/handSwipe.ts";
+import { Nameplate } from "@card-games/card-kit/table/Cards.tsx";
 import { useTapToPlay } from "@card-games/card-kit/table/tapToPlay.ts";
-import { TrickArea } from "@card-games/card-kit/table/Trick.tsx";
 import { sortHand } from "@card-games/card-kit/tricks.ts";
 import { legalPlays, partnerOf, teamOf } from "./engine/game.ts";
 import type { Action, EngineState, Seat, Team } from "./engine/game.ts";
@@ -29,7 +26,6 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
   const { game, names } = snapshot;
   // Before the early return, as hooks must be: a lift lasts for this view
   // of this hand on this turn.
-  const swipe = useHandSwipe();
   const { isLifted, tap, lift } = useTapToPlay(
     game ? `${game.handNumber}:${perspective}:${game.toAct}:${game.trick.length}` : ""
   );
@@ -50,12 +46,13 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
     );
   }
 
-  const seatAt = seatPositions(game.seats, perspective);
   const hand = sortHand(game.hands[perspective] ?? []);
   const legal = legalPlays(game, perspective);
   const myTurn = game.toAct === perspective;
   const bidding = game.phase === "bidding" && myTurn;
   const us = teamOf(game, perspective);
+  const isLegal = (card: Card) => game.phase === "playing" && myTurn && legal.some((each) => sameCard(each, card));
+  const play = (card: Card) => submit({ type: "play", seat: perspective, card });
 
   // What a seat bid and has taken so far: "bid 3 · 1 won", or "bidding…".
   const seatDetail = (seat: Seat) => {
@@ -65,50 +62,46 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
   };
 
   return (
-    <div className="table table--four">
-      {banner}
-      {(["left", "top", "right"] as const).map((position) => {
-        const seat = seatAt[position];
-        return (
-          <div className={`seat seat--${position}`} key={position}>
-            <OpponentSeat
-              name={nameOf(names, seat)}
-              count={game.hands[seat]?.length ?? 0}
-              active={game.toAct === seat}
-              badge={
-                <>
-                  {seat === partnerOf(game, perspective) && <span className="seat__tag">partner</span>}
-                  {seat === game.dealer && <span className="opponent__dealer" title="dealer">D</span>}
-                </>
-              }
-              detail={seatDetail(seat)}
-            />
-          </div>
-        );
+    <FourSeatTable
+      seats={game.seats}
+      perspective={perspective}
+      seatInfo={(seat) => ({
+        name: nameOf(names, seat),
+        count: game.hands[seat]?.length ?? 0,
+        active: game.toAct === seat,
+        badge: (
+          <>
+            {seat === partnerOf(game, perspective) && <span className="seat__tag">partner</span>}
+            {seat === game.dealer && (
+              <span className="opponent__dealer" title="dealer">
+                D
+              </span>
+            )}
+          </>
+        ),
+        detail: seatDetail(seat)
       })}
-
-      <TrickArea
-        trick={game.trick}
-        last={game.phase === "playing" ? game.lastTrick?.cards : null}
-        seatAt={seatAt}
-        caption={game.lastTrick && `${nameOf(names, game.lastTrick.winner)} took it`}
-        note={game.spadesBroken && game.phase === "playing" && "♠ broken"}
-      />
-
-      <ol className="feed">
-        {snapshot.feed.map((entry) => (
-          <li key={entry.id}>{entry.text}</li>
-        ))}
-      </ol>
-
-      <div className="seat seat--bottom">
-        <Scoreboard game={game} us={us} names={names} />
-        <div className="hud">
-          <Nameplate active={myTurn}>{nameOf(names, perspective)}</Nameplate>
-          <span>{statusLine(game, perspective, names)}</span>
-          <span className="hud__score">{seatDetail(perspective)}</span>
-        </div>
-        {bidding && (
+      trick={game.trick}
+      lastTrick={game.phase === "playing" ? game.lastTrick : null}
+      caption={game.lastTrick && `${nameOf(names, game.lastTrick.winner)} took it`}
+      note={game.spadesBroken && game.phase === "playing" && <span className="spades-broken">♠ broken</span>}
+      hand={hand}
+      look={(card) => {
+        const live = isLegal(card);
+        return { live, lifted: live && isLifted(card), dim: game.phase === "playing" && myTurn && !live };
+      }}
+      onCardTap={(card) => {
+        if (isLegal(card)) tap(card, () => play(card));
+      }}
+      onSwipeEnd={(card) => {
+        if (isLegal(card)) lift(card);
+      }}
+      canActivate={isLegal}
+      onActivate={play}
+      banner={banner}
+      // The trick is empty while bidding, so the bids take its place.
+      center={
+        bidding && (
           <div className="bids" role="group" aria-label="Your bid">
             {BIDS.map((bid) => (
               <button
@@ -122,61 +115,48 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
               </button>
             ))}
           </div>
-        )}
-        <div
-          className="hand"
-          style={handStyle(hand.length, 10)}
-          {...swipe((index) => {
-            const card = hand[index];
-            if (game.phase === "playing" && myTurn && legal.some((each) => sameCard(each, card))) lift(card);
-          })}
-        >
-          {hand.map((card: Card) => {
-            const live = game.phase === "playing" && myTurn && legal.some((each) => sameCard(each, card));
-            const classes = [
-              "hand__card",
-              live && "hand__card--live",
-              live && isLifted(card) && "hand__card--lifted",
-              game.phase === "playing" && myTurn && !live && "hand__card--dim"
-            ];
-            return (
-              <button
-                type="button"
-                key={cardKey(card)}
-                className={classes.filter(Boolean).join(" ")}
-                onClick={() => live && tap(card, () => submit({ type: "play", seat: perspective, card }))}
-                disabled={!live}
-                aria-label={cardLabel(card)}
-              >
-                <CardFace card={card} />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {(game.phase === "handOver" || game.phase === "gameOver") && game.handScore && (
-        <div className="overlay overlay--soft">
-          <div className="panel">
-            <h2>{game.phase === "gameOver" ? gameLine(game, perspective, names) : statusLine(game, perspective, names)}</h2>
-            <table className="scores">
-              <tbody>
-                {([us, (1 - us) as Team] as const).map((team) => (
-                  <tr key={team}>
-                    <td>{teamName(game, team, names)}</td>
-                    <td className="scores__detail">{handSummary(game.handScore![team], names)}</td>
-                    <td>{game.scores[team]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <button type="button" style={hudPrimaryButton} onClick={() => submit({ type: "startHand" })}>
-              {game.phase === "gameOver" ? "New game" : "Deal next hand"}
-            </button>
+        )
+      }
+      stack={
+        <>
+          <ol className="feed">
+            {snapshot.feed.map((entry) => (
+              <li key={entry.id}>{entry.text}</li>
+            ))}
+          </ol>
+          <Scoreboard game={game} us={us} names={names} />
+          <div className="hud">
+            <Nameplate active={myTurn}>{nameOf(names, perspective)}</Nameplate>
+            <span>{statusLine(game, perspective, names)}</span>
+            <span className="hud__score">{seatDetail(perspective)}</span>
           </div>
-        </div>
-      )}
-    </div>
+        </>
+      }
+      overlay={
+        (game.phase === "handOver" || game.phase === "gameOver") &&
+        game.handScore && (
+          <div className="overlay overlay--soft">
+            <div className="panel">
+              <h2>{game.phase === "gameOver" ? gameLine(game, perspective, names) : statusLine(game, perspective, names)}</h2>
+              <table className="scores">
+                <tbody>
+                  {([us, (1 - us) as Team] as const).map((team) => (
+                    <tr key={team}>
+                      <td>{teamName(game, team, names)}</td>
+                      <td className="scores__detail">{handSummary(game.handScore![team], names)}</td>
+                      <td>{game.scores[team]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button type="button" style={hudPrimaryButton} onClick={() => submit({ type: "startHand" })}>
+                {game.phase === "gameOver" ? "New game" : "Deal next hand"}
+              </button>
+            </div>
+          </div>
+        )
+      }
+    />
   );
 }
 
