@@ -39,11 +39,13 @@ export interface CardSpec {
   // engine reports the card a swipe ends on through SceneSpec.onSwipeEnd.
   readonly row?: string;
   // Draggable: `carry` is the keys that move with it, itself first (a
-  // run of cards in a column). `onDrop` gets where it was released; if
-  // the game takes the move the cards' new places follow, and if not they
-  // ease back to where they were.
+  // run of cards in a column). `onMove` follows the pointer, so a game can
+  // re-lay out around the card while it is held (Gin's hand making room
+  // for it). `onDrop` gets where it was released; if the game takes the
+  // move the cards' new places follow, and if not they ease back.
   readonly drag?: {
     readonly carry: readonly string[];
+    readonly onMove?: (at: Point) => void;
     readonly onDrop: (at: Point) => void;
   };
 }

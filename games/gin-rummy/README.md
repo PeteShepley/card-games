@@ -8,8 +8,11 @@ rules engine, the table, and the protocol reasoning.
   `deadwood.ts`), with no React, Pixi or network imports.
 - `src/store.ts`: the snapshot store. `asContractTarget` adapts it for the
   kit's transports.
-- `src/scene.ts`, `TableCanvas.tsx`, `Hud.tsx`, `Feed.tsx`, `status.ts`: the
-  table and its overlay.
+- `src/layout.ts`: the table's geometry (pure, tested), shared by the canvas
+  and the DOM overlay, including the grouped hand row.
+- `src/TableCanvas.tsx`: turns the snapshot into card places for the kit's
+  canvas table (the same engine as the other games), with drag-to-reorder.
+- `Hud.tsx`, `Feed.tsx`, `status.ts`: the DOM overlay.
 - `src/App.tsx`: picks a mode. The default is networked play through the kit's
   `RelayApp`; `?seat=a|b` uses the loopback and `?solo` the hot seat.
 

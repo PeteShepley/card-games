@@ -354,6 +354,7 @@ export async function createCardScene(app: Application): Promise<CardScene> {
         each.bx = at.x + drag.offsets[index].x;
         each.by = at.y + drag.offsets[index].y;
       });
+      drag.node.spec.drag?.onMove?.(at);
     }
   };
 

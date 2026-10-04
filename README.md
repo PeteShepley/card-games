@@ -12,14 +12,14 @@ packages/card-kit/   shared by every game
   net/                   relay + loopback transports, GameInfo / ContractTarget
   Lobby, RelayApp        create / join / wait / reconnect UI over the relay
   tricks                 follow suit, trick winner (optional trump), hand sorting
-  canvas/                the Pixi card table every game but gin draws on: the
+  canvas/                the Pixi card table every game draws on: the
                          engine (sprites ease to a spec; tap, drag, swipe-magnify),
                          CardCanvas, pure layouts (frame, hand, fans, four-seat
                          trick table) and the DOM over it (seat labels, hidden
                          hand buttons)
   table/                 table.css (felt, HUD, nameplates, overlays), labels,
                          seat positions, tap-to-lift
-games/gin-rummy/     2 players: engine, Pixi table, HUD (see its DESIGN.md)
+games/gin-rummy/     2 players: engine, canvas table, HUD (see its DESIGN.md)
 games/crazy-eights/  2-6 players: engine, canvas table
 games/hearts/        4 players: passing, no trump, game to 100
 games/spades/        4 players in partnerships: bidding, spades trump, game to 500

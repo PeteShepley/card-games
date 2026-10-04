@@ -62,6 +62,7 @@ export function CardCanvas({
       })
       .then(async () => {
         if (!live) return;
+        app.canvas.style.display = "block";
         host.appendChild(app.canvas);
         app.renderer.on("resize", report);
         report();
@@ -85,7 +86,8 @@ export function CardCanvas({
     };
   }, []);
 
-  // touch-action none: a drag or swipe across the table must not scroll or
-  // zoom the page under it.
-  return <div ref={hostRef} className="card-canvas" />;
+  // Styled inline so it works without the kit's table.css. touch-action
+  // none: a drag or swipe across the table must not scroll or zoom the
+  // page under it.
+  return <div ref={hostRef} style={{ position: "absolute", inset: 0, touchAction: "none" }} />;
 }

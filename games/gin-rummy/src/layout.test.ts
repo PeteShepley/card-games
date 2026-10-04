@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
-import { BASE_CARD_H, BASE_CARD_W, BASE_EDGE, tableMetrics } from "./layout.ts";
+import type { Card } from "@card-games/card-kit/cards.ts";
+import { BASE_CARD_H, BASE_CARD_W, BASE_EDGE, groupedXs, tableMetrics } from "./layout.ts";
 
 // The design viewport: at or above it nothing shrinks, so these assertions
 // also pin the geometry the table was built against.
@@ -51,7 +52,7 @@ test("scaling never collapses the table past the readable floor", () => {
   expect(tableMetrics(200, 700).scale).toBe(0.5);
   expect(tableMetrics(200, 700).cardW).toBe(BASE_CARD_W / 2);
   // Short as well: a little further down to make room for the HUD, no more.
-  expect(tableMetrics(200, 200).scale).toBe(0.45);
+  expect(tableMetrics(200, 200).scale).toBe(0.44);
 });
 
 // Room the HUD band leaves between the piles and the top of your hand.
@@ -71,14 +72,36 @@ test("a portrait phone keeps the cards bigger than the width alone allows", () =
 });
 
 test("the design viewport leaves the HUD its full band", () => {
-  expect(tableMetrics(900, 620).scale).toBe(1);
-  expect(hudBand(900, 620)).toBeGreaterThanOrEqual(88);
+  expect(tableMetrics(900, 630).scale).toBe(1);
+  expect(hudBand(900, 630)).toBeGreaterThanOrEqual(88);
 });
 
 test("a landscape phone shrinks the cards to make room for the HUD", () => {
   const metrics = tableMetrics(667, 375);
-  expect(metrics.scale).toBeLessThan(375 / 620);
-  expect(metrics.scale).toBeGreaterThanOrEqual(0.45);
+  expect(metrics.scale).toBeLessThan(375 / 630);
+  expect(metrics.scale).toBeGreaterThanOrEqual(0.44);
   expect(hudBand(667, 375)).toBeGreaterThanOrEqual(88);
   expect(hudBand(667, 420)).toBeGreaterThanOrEqual(88);
+});
+
+const card = (rank: string, suit = "hearts") => ({ rank, suit }) as Card;
+
+test("a hand's groups sit in one centred row, a visible gap at each boundary", () => {
+  const metrics = tableMetrics(WIDE, TALL);
+  const groups = [[card("2"), card("3"), card("4")], [card("K", "spades")], [card("9", "clubs"), card("9", "spades")]];
+  const xs = groupedXs(groups, WIDE, metrics).map((placed) => placed.x);
+  const steps = xs.slice(1).map((x, index) => x - xs[index]);
+  // Inside a group the spacing is even; across a boundary it widens by the group gap.
+  expect(steps[1]).toBeCloseTo(steps[0]);
+  expect(steps[2] - steps[0]).toBeCloseTo(metrics.groupGap);
+  expect(steps[3] - steps[0]).toBeCloseTo(metrics.groupGap);
+  expect((xs[0] + xs[xs.length - 1]) / 2).toBeCloseTo(WIDE / 2);
+});
+
+test("an eleven-card hand fits a phone's width", () => {
+  const metrics = tableMetrics(375, 667);
+  const hand = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J"].map((rank) => card(rank));
+  const xs = groupedXs([hand], 375, metrics).map((placed) => placed.x);
+  expect(xs[0] - metrics.cardW / 2).toBeGreaterThanOrEqual(0);
+  expect(xs[xs.length - 1] + metrics.cardW / 2).toBeLessThanOrEqual(375);
 });

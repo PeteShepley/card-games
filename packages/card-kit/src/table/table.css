@@ -225,16 +225,6 @@ body {
   overflow: hidden;
 }
 
-.card-canvas {
-  position: absolute;
-  inset: 0;
-  touch-action: none;
-}
-
-.card-canvas canvas {
-  display: block;
-}
-
 /* max-content: an absolutely placed box would otherwise only get the
    width left of its anchor, and the right-hand seat's plate would squeeze. */
 .seat-label {
