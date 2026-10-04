@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@peteshepley/game-relay": "git+https://github.com/PeteShepley/game-relay.git#v0.2"
+    "@peteshepley/game-relay": "git+https://github.com/PeteShepley/game-relay.git#v0.3"
   },
   "peerDependencies": {
     "pixi.js": "^8.19.0",

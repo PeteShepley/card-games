@@ -38,14 +38,17 @@ game's rules. Each client applies only stamped actions.
 
 Every multiplayer game has a computer opponent in `src/bot.ts`: a pure
 `decide(state, seat)` that returns the move that seat would make now, or null.
-Tests play whole games with bots in every seat. In the lobby you can play the
-computer with no relay at all, or, as a room's creator, fill empty seats with
-computer players. A bot's moves are ordinary actions. The first connected
-human's client submits them, and if that player drops, the next one takes over.
+Tests play whole games with bots in every seat.
 
-Online bots need the relay's `addBot` / `removeBot` messages (game-relay
-`bots` branch). Until card-kit pins a game-relay release that has them, they
-are declared in `packages/card-kit/src/bots/seats.ts`.
+In the lobby you can play the computer with no relay at all. Or create a room
+and mix people and computers: the waiting room lists every seat, and the
+creator can put a computer in any open one (or fill the rest and start) while
+friends with the code take the others. A bot's moves are ordinary actions.
+The first connected human's client submits them, and if that player drops,
+the next one takes over.
+
+Online computer players need game-relay v0.3 or later (`addBot` /
+`removeBot`). Against an older relay, the lobby says so.
 
 ## Development
 

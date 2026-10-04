@@ -7,7 +7,6 @@ import type {
   Stamped,
   WireMessage
 } from "@peteshepley/game-relay/protocol";
-import type { BotLobbyMessage } from "../bots/seats.ts";
 import { contractOf } from "./types.ts";
 import type { ContractTarget, GameInfo } from "./types.ts";
 
@@ -102,9 +101,9 @@ export function createRelayTransport<A extends Action>(options: {
   let expectedSeq = 1;
   let contractApplied = false;
   let pinger: ReturnType<typeof setInterval> | null = null;
-  const outbox: (WireMessage | BotLobbyMessage)[] = [];
+  const outbox: WireMessage[] = [];
 
-  const send = (message: WireMessage | BotLobbyMessage) => {
+  const send = (message: WireMessage) => {
     if (socket.readyState === WebSocket.OPEN)
       socket.send(JSON.stringify(message));
     else outbox.push(message);
