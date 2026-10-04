@@ -123,7 +123,11 @@ const panel: CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   gap: "0.5rem",
+  // Sized to its content, not to the half-width that left: 50% leaves it,
+  // so on a phone the buttons share a row instead of stacking over the hand.
+  width: "max-content",
   maxWidth: "min(92vw, 40rem)",
+  boxSizing: "border-box",
   padding: "0.6rem 1rem",
   background: "rgba(0, 0, 0, 0.55)",
   color: "#fff",

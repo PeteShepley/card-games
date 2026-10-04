@@ -47,7 +47,38 @@ test("a small viewport scales the cards down rather than overlapping the rows", 
 });
 
 test("scaling never collapses the table past the readable floor", () => {
-  const metrics = tableMetrics(200, 200);
-  expect(metrics.scale).toBe(0.5);
-  expect(metrics.cardW).toBe(BASE_CARD_W / 2);
+  // Narrow but tall enough for the HUD: the usual floor.
+  expect(tableMetrics(200, 700).scale).toBe(0.5);
+  expect(tableMetrics(200, 700).cardW).toBe(BASE_CARD_W / 2);
+  // Short as well: a little further down to make room for the HUD, no more.
+  expect(tableMetrics(200, 200).scale).toBe(0.45);
+});
+
+// Room the HUD band leaves between the piles and the top of your hand.
+const hudBand = (width: number, height: number) => {
+  const metrics = tableMetrics(width, height);
+  return Math.round(metrics.handY - metrics.cardH / 2 - metrics.hudTop);
+};
+
+test("a portrait phone keeps the cards bigger than the width alone allows", () => {
+  const metrics = tableMetrics(375, 667);
+  expect(metrics.scale).toBeCloseTo(375 / 600);
+  expect(metrics.scale).toBeGreaterThan(375 / 900);
+  // The two piles still fit across, with room either side.
+  expect(metrics.stock.x - metrics.cardW / 2).toBeGreaterThan(metrics.edge);
+  expect(metrics.discard.x + metrics.cardW / 2).toBeLessThan(375 - metrics.edge);
+  expect(hudBand(375, 667)).toBeGreaterThanOrEqual(88);
+});
+
+test("the design viewport leaves the HUD its full band", () => {
+  expect(tableMetrics(900, 620).scale).toBe(1);
+  expect(hudBand(900, 620)).toBeGreaterThanOrEqual(88);
+});
+
+test("a landscape phone shrinks the cards to make room for the HUD", () => {
+  const metrics = tableMetrics(667, 375);
+  expect(metrics.scale).toBeLessThan(375 / 620);
+  expect(metrics.scale).toBeGreaterThanOrEqual(0.45);
+  expect(hudBand(667, 375)).toBeGreaterThanOrEqual(88);
+  expect(hudBand(667, 420)).toBeGreaterThanOrEqual(88);
 });

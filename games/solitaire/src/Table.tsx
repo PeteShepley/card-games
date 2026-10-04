@@ -17,8 +17,10 @@ interface TableProps {
 }
 
 // Click a card to pick it up (it and everything on it), then click where it
-// goes; double-click sends a card to its foundation (or the first column
-// that takes it). The stock turns cards; an empty stock turns the waste.
+// goes. Clicking the held card again sends it to its foundation (or the
+// first column that takes it), so a double-click does the same - and works
+// on a phone, which has no reliable double-tap. The stock turns cards; an
+// empty stock turns the waste.
 export function Table({ game, canUndo, apply, undo, newGame, shareUrl }: TableProps) {
   const [selected, setSelected] = useState<Card | null>(null);
   const [copied, setCopied] = useState(false);
@@ -28,16 +30,20 @@ export function Table({ game, canUndo, apply, undo, newGame, shareUrl }: TablePr
     if (selected && apply({ type: "move", card: selected, to })) setSelected(null);
   };
 
-  // A click on a face-up card: drop the held card onto its column, or pick
-  // this one up instead.
+  // A click on a face-up card: send the held card home if this is it, drop
+  // it onto this card's column, or pick this one up instead.
   const onCardClick = (card: Card, column?: number) => {
+    if (isSelected(card)) {
+      sendHome(card);
+      return;
+    }
     if (selected && !isSelected(card) && column !== undefined) {
       if (apply({ type: "move", card: selected, to: { kind: "tableau", column } })) {
         setSelected(null);
         return;
       }
     }
-    setSelected(isSelected(card) || !locate(game, card) ? null : card);
+    setSelected(locate(game, card) ? card : null);
   };
 
   const sendHome = (card: Card) => {
@@ -74,10 +80,10 @@ export function Table({ game, canUndo, apply, undo, newGame, shareUrl }: TablePr
           </button>
         )}
         <button type="button" style={hudButton} onClick={() => newGame(1)}>
-          New · draw 1
+          <span className="wide-only">New · </span>draw 1
         </button>
         <button type="button" style={hudButton} onClick={() => newGame(3)}>
-          New · draw 3
+          <span className="wide-only">New · </span>draw 3
         </button>
         <button type="button" style={hudButton} onClick={share} title="Copy a link to this deal">
           {copied ? "Link copied" : `Deal #${game.seed}`}
@@ -108,7 +114,6 @@ export function Table({ game, canUndo, apply, undo, newGame, shareUrl }: TablePr
                 className={`slot${isSelected(card) ? " slot--selected" : ""}`}
                 disabled={!top}
                 onClick={() => onCardClick(card)}
-                onDoubleClick={() => sendHome(card)}
                 aria-label={cardLabel(card)}
               >
                 <CardFace card={card} />
@@ -164,7 +169,6 @@ export function Table({ game, canUndo, apply, undo, newGame, shareUrl }: TablePr
                 key={cardKey(card)}
                 className={`column__card slot${isSelected(card) ? " slot--selected" : ""}`}
                 onClick={() => onCardClick(card, index)}
-                onDoubleClick={() => sendHome(card)}
                 aria-label={cardLabel(card)}
               >
                 <CardFace card={card} />

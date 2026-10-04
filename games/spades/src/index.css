@@ -13,6 +13,8 @@
 
 .scoreboard {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem;
   font-size: 0.85rem;
 }
@@ -53,8 +55,23 @@
   color: #cfd8ff;
 }
 
+/* Two rows of seven, so the hand you are bidding on stays on screen. */
 @media (max-width: 640px) {
   .bids {
-    grid-template-columns: repeat(5, auto);
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    padding: 0.3rem;
+    width: 100%;
+    max-width: 22rem;
+    box-sizing: border-box;
+  }
+  /* The buttons share the kit's inline HUD style; only the width gives. */
+  .bids button {
+    min-width: 0;
+    padding: 0.45rem 0 !important;
+  }
+  .scoreboard {
+    gap: 0.4rem;
+    font-size: 0.8rem;
   }
 }

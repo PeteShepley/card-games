@@ -1,8 +1,13 @@
 /* Solitaire on top of the kit's table.css: a top row (stock, waste,
    foundations) over seven fanned columns. Cards size to fit seven across. */
 
+/* --card-h is redeclared here: the kit's is computed on :root from the
+   kit's --card-w, so it would not follow this one. The height cap keeps a
+   landscape phone's top row and tableau in view. */
 .solitaire {
-  --card-w: min(92px, calc((100vw - 2rem - 6 * 0.5rem) / 7));
+  --gap: 0.5rem;
+  --card-w: min(92px, calc((100vw - 2rem - 6 * var(--gap)) / 7), 18vh);
+  --card-h: calc(var(--card-w) * 1.4);
   grid-template-rows: auto auto 1fr;
   justify-items: center;
   overflow-y: auto;
@@ -12,7 +17,7 @@
 .tableau {
   display: grid;
   grid-template-columns: repeat(7, var(--card-w));
-  gap: 0.5rem;
+  gap: var(--gap);
 }
 
 .slot {
@@ -82,6 +87,27 @@
   margin-top: calc(var(--card-h) * -0.9);
 }
 
-.column__card:hover .card {
-  filter: brightness(1.05);
+@media (hover: hover) {
+  .column__card:hover .card {
+    filter: brightness(1.05);
+  }
+}
+
+/* A phone: tighter gutters for bigger cards, more of each face-up card
+   showing to tap, and shorter button labels. The table's padding is
+   0.5rem a side here. */
+@media (max-width: 640px), (max-height: 500px) {
+  .solitaire {
+    --gap: 0.25rem;
+    --card-w: min(92px, calc((100vw - 1rem - 6 * var(--gap)) / 7), 18vh);
+  }
+  .column__card + .column__card {
+    margin-top: calc(var(--card-h) * -0.7);
+  }
+  .column__card--down + .column__card--down {
+    margin-top: calc(var(--card-h) * -0.88);
+  }
+  .wide-only {
+    display: none;
+  }
 }

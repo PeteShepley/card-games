@@ -97,3 +97,10 @@ button.pile:disabled {
 .suit-choice--diamonds {
   color: #c62828;
 }
+
+@media (max-width: 640px) {
+  .center {
+    gap: calc(var(--card-w) * 0.35);
+    padding-bottom: 1.4rem;
+  }
+}

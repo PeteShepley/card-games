@@ -10,9 +10,14 @@
   box-shadow: 0 0 0 3px #ffd54f, 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
-.hand__card--picked:hover,
 .hand__card--picked:focus-visible {
   transform: translateY(-1.6rem);
+}
+
+@media (hover: hover) {
+  .hand__card--picked:hover {
+    transform: translateY(-1.6rem);
+  }
 }
 
 /* Hearts broken is the one note under the trick. */

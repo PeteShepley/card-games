@@ -1,10 +1,11 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cardKey, sameCard } from "@card-games/card-kit/cards.ts";
 import type { Card } from "@card-games/card-kit/cards.ts";
 import { hudButton, hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
 import { CardFace, Nameplate, OpponentSeat } from "@card-games/card-kit/table/Cards.tsx";
-import { cardLabel, squeeze } from "@card-games/card-kit/table/labels.ts";
+import { cardLabel, handStyle } from "@card-games/card-kit/table/labels.ts";
 import { seatPositions } from "@card-games/card-kit/table/seats.ts";
+import { useTapToPlay } from "@card-games/card-kit/table/tapToPlay.ts";
 import { TrickArea } from "@card-games/card-kit/table/Trick.tsx";
 import { sortHand } from "@card-games/card-kit/tricks.ts";
 import { legalPlays, partnerOf, teamOf } from "./engine/game.ts";
@@ -25,6 +26,11 @@ const BIDS = Array.from({ length: 14 }, (_, bid) => bid);
 
 export function Table({ snapshot, perspective, submit, banner }: TableProps) {
   const { game, names } = snapshot;
+  // Before the early return, as hooks must be: a lift lasts for this view
+  // of this hand on this turn.
+  const { isLifted, tap } = useTapToPlay(
+    game ? `${game.handNumber}:${perspective}:${game.toAct}:${game.trick.length}` : ""
+  );
 
   if (!game || game.phase === "awaitingStart") {
     return (
@@ -115,16 +121,21 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
             ))}
           </div>
         )}
-        <div className="hand" style={{ "--squeeze": squeeze(hand.length, 10) } as CSSProperties}>
+        <div className="hand" style={handStyle(hand.length, 10)}>
           {hand.map((card: Card) => {
             const live = game.phase === "playing" && myTurn && legal.some((each) => sameCard(each, card));
-            const classes = ["hand__card", live && "hand__card--live", game.phase === "playing" && myTurn && !live && "hand__card--dim"];
+            const classes = [
+              "hand__card",
+              live && "hand__card--live",
+              live && isLifted(card) && "hand__card--lifted",
+              game.phase === "playing" && myTurn && !live && "hand__card--dim"
+            ];
             return (
               <button
                 type="button"
                 key={cardKey(card)}
                 className={classes.filter(Boolean).join(" ")}
-                onClick={() => live && submit({ type: "play", seat: perspective, card })}
+                onClick={() => live && tap(card, () => submit({ type: "play", seat: perspective, card }))}
                 disabled={!live}
                 aria-label={cardLabel(card)}
               >

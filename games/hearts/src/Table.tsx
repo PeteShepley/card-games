@@ -1,11 +1,12 @@
 import { useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cardKey, sameCard } from "@card-games/card-kit/cards.ts";
 import type { Card } from "@card-games/card-kit/cards.ts";
 import { hudPrimaryButton } from "@card-games/card-kit/hudStyles.ts";
 import { CardFace, Nameplate, OpponentSeat } from "@card-games/card-kit/table/Cards.tsx";
-import { cardLabel, squeeze } from "@card-games/card-kit/table/labels.ts";
+import { cardLabel, handStyle } from "@card-games/card-kit/table/labels.ts";
 import { seatPositions } from "@card-games/card-kit/table/seats.ts";
+import { useTapToPlay } from "@card-games/card-kit/table/tapToPlay.ts";
 import { TrickArea } from "@card-games/card-kit/table/Trick.tsx";
 import { cardPoints, legalPlays, passTarget } from "./engine/game.ts";
 import type { Action, EngineState, Seat } from "./engine/game.ts";
@@ -27,6 +28,11 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
   // Cards picked to pass; local until submitted. Keyed by hand so a new
   // deal (or a hot-seat perspective change) starts clean.
   const [picked, setPicked] = useState<{ key: string; cards: Card[] }>({ key: "", cards: [] });
+  // Before the early return, as hooks must be: a lift lasts for this view
+  // of this hand on this turn.
+  const { isLifted, tap } = useTapToPlay(
+    game ? `${game.handNumber}:${perspective}:${game.toAct}:${game.trick.length}` : ""
+  );
 
   if (!game || game.phase === "awaitingStart") {
     return (
@@ -63,8 +69,9 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
   };
 
   const onCardClick = (card: Card) => {
+    // Picking a card to pass is undone by tapping it again, so it needs no lift.
     if (passing) togglePick(card);
-    else if (legal.some((each) => sameCard(each, card))) submit({ type: "play", seat: perspective, card });
+    else if (legal.some((each) => sameCard(each, card))) tap(card, () => submit({ type: "play", seat: perspective, card }));
   };
 
   const seatDetail = (seat: Seat) =>
@@ -118,7 +125,7 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
             </button>
           )}
         </div>
-        <div className="hand" style={{ "--squeeze": squeeze(hand.length, 10) } as CSSProperties}>
+        <div className="hand" style={handStyle(hand.length, 10)}>
           {hand.map((card) => {
             const isPicked = (alreadyPassed ?? chosen).some((each) => sameCard(each, card));
             const live = passing || (myTurn && legal.some((each) => sameCard(each, card)));
@@ -126,6 +133,7 @@ export function Table({ snapshot, perspective, submit, banner }: TableProps) {
               "hand__card",
               live && "hand__card--live",
               isPicked && "hand__card--picked",
+              live && !passing && isLifted(card) && "hand__card--lifted",
               ((myTurn && !live) || alreadyPassed) && "hand__card--dim"
             ].filter(Boolean);
             return (
