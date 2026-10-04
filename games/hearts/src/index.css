@@ -1,21 +1,6 @@
-/* Hearts additions on top of the kit's table.css (which provides the
-   four-seat layout and the trick cross): the pass picker. */
+/* Hearts additions on top of the kit's table.css: the "hearts broken" note
+   under the trick. The cards themselves are drawn on the canvas. */
 
-/* A card chosen to pass rides higher than a merely playable one. */
-.hand__card--picked {
-  transform: translateY(-1.4rem);
-}
-
-.hand__card--picked .card {
-  box-shadow: 0 0 0 3px #ffd54f, 0 4px 10px rgba(0, 0, 0, 0.4);
-}
-
-.hand__card--picked:hover,
-.hand__card--picked:focus-visible {
-  transform: translateY(-1.6rem);
-}
-
-/* Hearts broken is the one note under the trick. */
-.trick__note {
+.hearts-broken {
   color: #ffb3b3;
 }

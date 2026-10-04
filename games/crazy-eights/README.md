@@ -26,8 +26,10 @@ Built on the shared card kit and played over the shared game relay.
   hands reaching an end.
 - `src/store.ts`: the snapshot store, plus `asContractTarget` for the kit's
   transports.
-- `src/Table.tsx`, `src/index.css`: a DOM table (no Pixi) using the kit's
-  card faces. Opponents sit in turn order across the top.
+- `src/layout.ts`: where every card goes (pure, tested): opponents in turn
+  order across the top, the piles, your hand.
+- `src/Table.tsx`, `src/index.css`: the kit's canvas table drawing that
+  layout, with the HUD, suit picker and scores as DOM over it.
 - `src/App.tsx`: networked play by default; `?seat=a|b` for the two-tab
   loopback; `?solo=N` for an N-player hot seat.
 

@@ -164,7 +164,7 @@ const card: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: "0.85rem",
-  minWidth: "280px",
+  minWidth: "min(280px, 100%)",
   maxWidth: "90vw",
   padding: "1.5rem",
   background: "rgba(20, 20, 20, 0.92)",

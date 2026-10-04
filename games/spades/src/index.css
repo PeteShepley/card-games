@@ -1,6 +1,6 @@
-/* Spades additions on top of the kit's table.css (which provides the
-   four-seat layout and the trick cross): bidding, the partnership
-   scoreboard, and seat tags. */
+/* Spades additions on top of the kit's table.css: the bid buttons (over the
+   empty trick while bidding), the partnership scoreboard, and seat tags.
+   The cards themselves are drawn on the canvas. */
 
 .bids {
   display: grid;
@@ -13,6 +13,8 @@
 
 .scoreboard {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem;
   font-size: 0.85rem;
 }
@@ -48,13 +50,26 @@
   text-align: left !important;
 }
 
-/* Spades broken is the one note under the trick. */
-.trick__note {
+.spades-broken {
   color: #cfd8ff;
 }
 
-@media (max-width: 640px) {
+/* Two rows of seven, narrow enough to sit over the trick on a phone. */
+@media (max-width: 640px), (max-height: 500px) {
   .bids {
-    grid-template-columns: repeat(5, auto);
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    padding: 0.3rem;
+    width: min(22rem, 90vw);
+    box-sizing: border-box;
+  }
+  /* The buttons share the kit's inline HUD style; only the width gives. */
+  .bids button {
+    min-width: 0;
+    padding: 0.45rem 0 !important;
+  }
+  .scoreboard {
+    gap: 0.4rem;
+    font-size: 0.8rem;
   }
 }

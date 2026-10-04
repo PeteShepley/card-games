@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { minDeadwood } from "./engine/melds.ts";
 import { resultBanner, statusLine } from "./status.ts";
 import type { EngineState, HandResult, Seat } from "./engine/game.ts";
+import { inColumn } from "./layout.ts";
 import type { TableMetrics } from "./layout.ts";
 
 // The band between the piles and your hand: what is going on, how bad your
@@ -59,7 +60,7 @@ export function Hud({
       : null;
 
   return (
-    <div style={{ ...panel, top: metrics ? `${metrics.hudTop}px` : "60%" }}>
+    <div style={metrics?.column ? { ...panel, ...inColumn(metrics.column), bottom: metrics.column.bottom } : { ...panel, top: metrics ? `${metrics.hudTop}px` : "60%" }}>
       <div style={statusRow}>
         {game && (
           <Nameplate
@@ -104,6 +105,7 @@ export function WinBanner({
       style={{
         ...bannerBox,
         top: metrics ? `${metrics.stock.y}px` : "50%",
+        left: metrics ? `${metrics.playX}px` : "50%",
         borderColor: banner.won ? "#ffd54a" : "rgba(255, 255, 255, 0.25)"
       }}
     >
@@ -123,7 +125,11 @@ const panel: CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   gap: "0.5rem",
+  // Sized to its content, not to the half-width that left: 50% leaves it,
+  // so on a phone the buttons share a row instead of stacking over the hand.
+  width: "max-content",
   maxWidth: "min(92vw, 40rem)",
+  boxSizing: "border-box",
   padding: "0.6rem 1rem",
   background: "rgba(0, 0, 0, 0.55)",
   color: "#fff",

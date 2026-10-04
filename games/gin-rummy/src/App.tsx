@@ -156,7 +156,8 @@ function GameView({ submit, follow, noGameText, banner }: GameViewProps) {
           style={{
             top: metrics
               ? `${metrics.opponentY + metrics.cardH / 2 + 8}px`
-              : "9rem"
+              : "9rem",
+            left: metrics ? `${metrics.playX}px` : "50%"
           }}
         />
       )}

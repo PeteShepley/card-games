@@ -8,3 +8,4 @@ function.zip
 *.tfstate*
 *.log
 .DS_Store
+.idea/

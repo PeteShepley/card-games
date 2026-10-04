@@ -1,5 +1,10 @@
 # Gin Rummy — Project Design
 
+> **2026-10-04:** the table now draws on the card kit's shared canvas engine
+> (`packages/card-kit/src/canvas/`) instead of its own `scene.ts`. The
+> reconciler, canvas lifecycle and drag described below live there now;
+> `TableCanvas.tsx` supplies the card places from `layout.ts`.
+
 **Status:** REVISED 2026-08-01 after an adversarial design review (three Claude
 lenses + a qwen breadth pass, per the practice from the platformer-rust
 project). The review's confirmed findings and the decisions locked during it

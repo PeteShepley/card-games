@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 // components and nothing else, which is what Vite's fast refresh needs.
 
 export const hudButton: CSSProperties = {
-  padding: "0.4rem 0.8rem",
+  padding: "0.55rem 0.9rem",
   borderRadius: "6px",
   border: "1px solid #6b7f6b",
   background: "#2a3a2a",

@@ -35,8 +35,12 @@ that takes it. **Auto-finish** appears once nothing is hidden.
   `finishingMoves`. Property tests make random legal moves, checking all 52
   cards survive and replay is exact.
 - `src/store.ts`: the move log, undo, and the save slot.
-- `src/Table.tsx`, `src/index.css`: the top row and seven columns, sized so
-  seven cards fit across a phone.
+- `src/layout.ts`: where all 52 cards sit (pure, tested): the top row and
+  seven columns, sized so seven fit across a phone, the columns' fans
+  squeezing to fit the height; and where a dropped card is headed.
+- `src/Table.tsx`, `src/index.css`: the kit's canvas table drawing that
+  layout, with drag-and-drop, tap-to-move and tap-again-to-send-home, and
+  the controls as DOM over it.
 
 ```sh
 npm run dev --workspace=solitaire

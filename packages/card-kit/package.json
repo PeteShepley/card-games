@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "What every card game here shares: cards, deck, PRNG, card faces, hand ordering, the relay/loopback transports, and the lobby.",
+  "description": "What every card game here shares: cards, deck, PRNG, card faces, the canvas card table, hand ordering, the relay/loopback transports, and the lobby.",
   "exports": {
     "./*": "./src/*"
   },
