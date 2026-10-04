@@ -79,7 +79,6 @@ export function TableCanvas({ snapshot, perspective, ginKeys, handlers }: TableC
 
   let spec: SceneSpec | null = null;
   if (game && metrics && size && groups) {
-    const { width } = size;
     const { cardW } = metrics;
     const cards: CardSpec[] = [];
 
@@ -88,7 +87,7 @@ export function TableCanvas({ snapshot, perspective, ginKeys, handlers }: TableC
       // Your own cards keep their keys and slide into the arrangement.
       const show = (arrangement: Arrangement, y: number) => {
         const deadwood = new Set(arrangement.deadwood.map(cardKey));
-        groupedXs([...arrangement.melds, arrangement.deadwood], width, metrics).forEach((placed, index) =>
+        groupedXs([...arrangement.melds, arrangement.deadwood], metrics).forEach((placed, index) =>
           cards.push({
             key: cardKey(placed.held),
             face: placed.held,
@@ -105,11 +104,11 @@ export function TableCanvas({ snapshot, perspective, ginKeys, handlers }: TableC
       spec = { cards };
     } else {
       const stock = metrics.stock;
-      const opponentRow: Point = { x: width / 2, y: metrics.opponentY };
+      const opponentRow: Point = { x: metrics.playX, y: metrics.opponentY };
 
       // The opponent's hand is a row of backs, keyed by position: the
       // viewer never learns which cards they are.
-      groupedXs([game.hands[otherSeat(perspective)]], width, metrics).forEach((placed, index) =>
+      groupedXs([game.hands[otherSeat(perspective)]], metrics).forEach((placed, index) =>
         cards.push({ key: `opp:${index}`, face: null, x: placed.x, y: metrics.opponentY, w: cardW, z: index, spawn: stock })
       );
 
@@ -144,7 +143,7 @@ export function TableCanvas({ snapshot, perspective, ginKeys, handlers }: TableC
       // the neighbours close up and slide aside.
       const dragTo = (key: string, at: Point) => {
         const order = dragOrder ?? shownKeys;
-        const xs = groupedXs([orderHand(hand, order)], width, metrics);
+        const xs = groupedXs([orderHand(hand, order)], metrics);
         let nearest = 0;
         xs.forEach((placed, index) => {
           if (Math.abs(placed.x - at.x) < Math.abs(xs[nearest].x - at.x)) nearest = index;
@@ -155,7 +154,7 @@ export function TableCanvas({ snapshot, perspective, ginKeys, handlers }: TableC
         if (next !== order || !dragOrder) setDragOrder(next);
       };
 
-      groupedXs(handGroups, width, metrics).forEach((placed, index) => {
+      groupedXs(handGroups, metrics).forEach((placed, index) => {
         const held = placed.held;
         const key = cardKey(held);
         const selected = !!snapshot.selectedCard && sameCard(held, snapshot.selectedCard);

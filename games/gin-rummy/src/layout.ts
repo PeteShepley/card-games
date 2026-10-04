@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Card } from "@card-games/card-kit/cards.ts";
 import { CARD_ASPECT } from "@card-games/card-kit/canvas/spec.ts";
 
@@ -37,6 +38,31 @@ const HUD_GAP = 14;
 const HUD_BAND = 88;
 const SHORT_MIN_SCALE = 0.44;
 
+// A landscape screen - where height is what runs short - moves the HUD and
+// the feed out of the card stack into a column at the right, so the cards
+// get the full height: opponent row, their nameplate, the piles, your hand.
+const NAMEPLATE_H = 34; // DOM, so it does not scale
+const PILE_GAP = 16;
+const COLUMN_PAD = 12;
+// The card stack's height per unit of scale: two edges, three card rows,
+// the selected card's raise and a gap either side of the piles.
+const WIDE_STACK = BASE_EDGE * 2 + BASE_CARD_H * 3 + BASE_RAISE + PILE_GAP * 2;
+// Width to fit at full size: the piles, and an eleven-card hand overlapping
+// to about six cards' width.
+const WIDE_ROW = BASE_CARD_W * 6;
+// A big landscape window grows the cards past their base size, up to this.
+const WIDE_MAX_SCALE = 1.4;
+
+const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
+
+// Where the DOM controls go on a landscape screen, as CSS offsets.
+export interface ControlColumn {
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+  readonly width: number;
+}
+
 export interface TableMetrics {
   readonly scale: number;
   readonly cardW: number;
@@ -46,13 +72,20 @@ export interface TableMetrics {
   readonly raise: number;
   readonly stock: { readonly x: number; readonly y: number };
   readonly discard: { readonly x: number; readonly y: number };
-  // Centre-y of the two card rows, and the top of the band the HUD occupies.
+  // Centre-y of the two card rows, and (portrait) the top of the band the
+  // HUD occupies between the piles and the hand.
   readonly opponentY: number;
   readonly handY: number;
   readonly hudTop: number;
+  // The area the cards use: the whole width, or (landscape) the part left
+  // of the control column.
+  readonly playX: number;
+  readonly playWidth: number;
+  readonly column: ControlColumn | null;
 }
 
 export function tableMetrics(width: number, height: number): TableMetrics {
+  if (width > height * 1.25) return wideMetrics(width, height);
   const designW = height > width ? PORTRAIT_DESIGN_W : DESIGN_W;
   // From hand top to HUD top is height/2 less (edge + card + half a card +
   // HUD gap) at base size, each times the scale.
@@ -80,7 +113,41 @@ export function tableMetrics(width: number, height: number): TableMetrics {
     discard: { x: width / 2 + cardW * 0.75, y: height / 2 },
     opponentY: edge + cardH / 2,
     handY: height - edge - cardH / 2,
-    hudTop: height / 2 + cardH / 2 + HUD_GAP * scale
+    hudTop: height / 2 + cardH / 2 + HUD_GAP * scale,
+    playX: width / 2,
+    playWidth: width,
+    column: null
+  };
+}
+
+function wideMetrics(width: number, height: number): TableMetrics {
+  const columnW = clamp(width * 0.28, 190, 300);
+  const playWidth = width - columnW - COLUMN_PAD * 2;
+  const scale = clamp(Math.min((height - NAMEPLATE_H) / WIDE_STACK, playWidth / WIDE_ROW), SHORT_MIN_SCALE, WIDE_MAX_SCALE);
+  const cardW = BASE_CARD_W * scale;
+  const cardH = BASE_CARD_H * scale;
+  const edge = BASE_EDGE * scale;
+  const raise = BASE_RAISE * scale;
+  const opponentY = edge + cardH / 2;
+  const handY = height - edge - cardH / 2;
+  // The piles sit midway between the opponent's nameplate and your hand.
+  const pilesY = (opponentY + cardH / 2 + NAMEPLATE_H + handY - cardH / 2 - raise) / 2;
+  const playX = playWidth / 2;
+  return {
+    scale,
+    cardW,
+    cardH,
+    edge,
+    groupGap: BASE_GROUP_GAP * scale,
+    raise,
+    stock: { x: playX - cardW * 0.75, y: pilesY },
+    discard: { x: playX + cardW * 0.75, y: pilesY },
+    opponentY,
+    handY,
+    hudTop: height,
+    playX,
+    playWidth,
+    column: { right: COLUMN_PAD, top: COLUMN_PAD, bottom: COLUMN_PAD, width: columnW }
   };
 }
 
@@ -88,9 +155,9 @@ export function tableMetrics(width: number, height: number): TableMetrics {
 // a single group is a plain evenly-spaced row.
 export function groupedXs(
   groups: readonly (readonly Card[])[],
-  width: number,
   metrics: TableMetrics
 ): { held: Card; x: number }[] {
+  const width = metrics.playWidth;
   const flat: { held: Card; group: number }[] = [];
   groups.forEach((group, index) => {
     for (const held of group) flat.push({ held, group: index });
@@ -103,7 +170,7 @@ export function groupedXs(
     (width - metrics.cardW - metrics.edge * 2 - gaps) /
       Math.max(flat.length - 1, 1)
   );
-  let x = width / 2 - (spacing * (flat.length - 1) + gaps) / 2;
+  let x = metrics.playX - (spacing * (flat.length - 1) + gaps) / 2;
   return flat.map((entry, index) => {
     if (index > 0) {
       x += spacing;
@@ -111,4 +178,17 @@ export function groupedXs(
     }
     return { held: entry.held, x };
   });
+}
+
+// On a landscape screen the HUD (and the feed) leave the card stack for a
+// column at the right, so the cards get the full height.
+export function inColumn(column: ControlColumn): CSSProperties {
+  return {
+    left: "auto",
+    right: `${column.right}px`,
+    width: `${column.width}px`,
+    maxWidth: "none",
+    boxSizing: "border-box",
+    transform: "none"
+  };
 }

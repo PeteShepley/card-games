@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { FeedEntry } from "./store.ts";
+import { inColumn } from "./layout.ts";
 import type { TableMetrics } from "./layout.ts";
 
 // What just happened, oldest at the top. Deliberately a persistent panel
@@ -18,12 +19,16 @@ export function Feed({
   if (entries.length === 0) return null;
   return (
     <div
-      style={{
-        ...panel,
-        top: metrics
-          ? `${metrics.opponentY + metrics.cardH / 2 + 8}px`
-          : "9.5rem"
-      }}
+      style={
+        metrics?.column
+          ? { ...panel, ...inColumn(metrics.column), top: metrics.column.top }
+          : {
+              ...panel,
+              top: metrics
+                ? `${metrics.opponentY + metrics.cardH / 2 + 8}px`
+                : "9.5rem"
+            }
+      }
     >
       {entries.map((entry, index) => (
         // The newest line is the one being read; older ones recede.
